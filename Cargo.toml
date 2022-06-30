@@ -16,6 +16,9 @@ argmin = { version = "0.4.6", features = ["ndarray", "ndarray-rand"] }
 serde = "1.0"
 thiserror = "1.0"
 
+nalgebra = "0.31.0" # replace * by the latest version of the crate.
+rand = "0.8.5"
+
 # linfa = { version = "0.6.0", path = "../..", features=["serde"] }
 
 [dev-dependencies]

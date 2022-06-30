@@ -3,52 +3,18 @@ use postgres::{Client, Error, NoTls};
 //use opendp::*;
 use ndarray::*;
 
+extern crate nalgebra as na;
+use rand::Rng;
+use na::{DMatrix, Hessenberg, Matrix4};
+
 pub mod lr;
 
-type Vec64_20 = Vec<(Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>)>;
 
 type VecVec64 = Vec<Vec<Option<f64>>>;
 
-type Vec64_21 = Vec<(Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>,
-    Option<f64>)>;
+
+
+
 
 
 fn main() -> Result<(), Error> {
@@ -85,26 +51,26 @@ fn main() -> Result<(), Error> {
 
 
         sn.push(vec![var00,
-                  var01,
-                  var02,
-                  var03,
-                  var04,
-                  var05,
-                  var06,
-                  var07,
-                  var08,
-                  var09,
-                  var10,
-                  var11,
-                  var12,
-                  var13,
-                  var14,
-                  var15,
-                  var16,
-                  var17,
-                  var18,
-                  var19,
-                  var20]);
+                     var01,
+                     var02,
+                     var03,
+                     var04,
+                     var05,
+                     var06,
+                     var07,
+                     var08,
+                     var09,
+                     var10,
+                     var11,
+                     var12,
+                     var13,
+                     var14,
+                     var15,
+                     var16,
+                     var17,
+                     var18,
+                     var19,
+                     var20]);
 
         //println!(
         //    "row i : {}) {}",
@@ -126,10 +92,10 @@ fn main() -> Result<(), Error> {
     let split : i64 = (sn.len() as f64 * 0.9) as i64;
     for n in sn {
         if i < split {
-            x_train_1.push(n[0..19].to_vec());
+            x_train_1.push(n[0..20].to_vec());
             y_train_1.push(n[20]);
         } else {
-            x_test_1.push(n[0..19].to_vec());
+            x_test_1.push(n[0..20].to_vec());
             y_test_1.push(n[20]);
         }
         i = i + 1;
@@ -152,8 +118,8 @@ fn main() -> Result<(), Error> {
     println!("Iterator {} x {}", ilen, jlen);
 
     
-    for i in 0..ilen-1 {
-        for j in 0..jlen-1 {
+    for i in 0..ilen {
+        for j in 0..jlen {
             x_train[[i as usize, j as usize]] = x_train_1[i as usize][j as usize].unwrap();
         }
         y_train[[i as usize,0]] = y_train_1[i as usize].unwrap();
@@ -168,11 +134,81 @@ fn main() -> Result<(), Error> {
     let jlen = x_test.dim().1 as i64;
 
     for i in 0..ilen-1 {
-        for j in 0..jlen-1 {
+        for j in 0..jlen {
             x_test[[i as usize,j as usize]] = x_test_1[i as usize][j as usize].unwrap();
         }
         y_test[[i as usize,0]] = y_test_1[i as usize].unwrap();
     }
+
+
+
+    //for i in 0..19 {
+    //    println!("{} - {}", i, x_train[[0,i as usize]]);
+    //}
+    //println!("{} - {}", 19, x_train[[0,19 as usize]]);
+    //println!("{} - {}", 20, y_train[[0,0 as usize]]);
+
+
+    let size_li = x_train.dim().1;
+    let size_l1 = 30;
+    let size_l2 = 30;
+    let size_lo = 10;
+
+
+
+    let aaa = rand::random::<f64>();
+    
+
+    let w1 = na::DMatrix::from_fn(size_li, size_l1, |r,c| {rand::random::<f64>() - 0.5});
+    let w2 = na::DMatrix::from_fn(size_l1, size_l2, |r,c| {rand::random::<f64>() - 0.5});
+    let w3 = na::DMatrix::from_fn(size_l2, size_lo, |r,c| {rand::random::<f64>() - 0.5});
+
+    let mut l1 = na::DMatrix::from_element(size_l1, 1, 0.);
+    //let mut l2 = na::DMatrix::from_element(1, size_l2, 0.);
+    //let mut lo = na::DMatrix::from_element(1, size_lo, 0.);
+
+    let mut idx : usize = 0;
+    for x in x_train_1 {
+        let li = na::DMatrix::from_vec(size_li, 1, x.to_vec());
+
+        //l1 = li * w1;
+
+        //let l1_sigmoid = l1.mapv(|x| 1. / (1. + (-x).exp()));
+
+        //let l1 = li.dot(w1);
+        //let dynamic_times_static: na::DVector<_> = dynamic_m * dynamic_m;
+
+
+        l1.gemm_tr(&li, &w1);
+
+
+
+//        let l1 = Layer::new(size_l1, size_li, ActivationFunction::Sigmoid);
+//
+//        let l2 = Layer::new(size_l2, size_l1, ActivationFunction::Sigmoid);
+//
+//        let lo = Layer::new(size_lo, size_l2, ActivationFunction::Sigmoid);
+//
+//        let mut net = NeuralNetwork::new(li, l1, l2, lo);
+
+
+
+
+
+        //println!("{}", idx);
+        idx += 1;
+    }
+
+    //let li = DMatrix::from_vec(size_li, size_l1, x_train.iter().map(|x| *x).collect());
+    //let li = na::DMatrix::from_vec(size_li, size_l1, vec!(x_train[[0][0..size_li]].to_vec()));
+
+
+
+
+    /*
+
+
+
 
 
 
@@ -181,7 +217,7 @@ fn main() -> Result<(), Error> {
     let cliid = cli.get_id();
     println!("{}",cliid);
 
-    let size_l0 = 20;
+    let size_li = 20;
     let size_l1 = 30;
     let size_l2 = 30;
     let size_lo = 10;
@@ -255,103 +291,10 @@ fn main() -> Result<(), Error> {
         // Error
 
 
-
-
-
     }
-
-
-
-
-
-
-
-
-
-    
-/*
-    use opendp::meas::make_base_gaussian;
-
-    let epsilon = 3.0;
-    let data_norm = 7.89;
-
-    let meas1 = opendp::meas::make_base_gaussian(epsilon, X_train);
-    let meas2 = opendp::meas::make_base_gaussian(epsilon, X_test);
-*/  
-
-/*
-    // Privatelly transform the data
-    use opendp::trans::*;
-    use opendp::comb::*;
-    use opendp::meas::*;
-
-
-    
-    let trans0 = opendp::trans::make
-    let trans1 = opendp::trans::make_split_dataframe(separator: Option<&str>, col_names: Vec<K>)?;
-    let trans2 = opendp::trans::make_split_records(separator: Option<&str>)?;
-
-    let cast = make_cast_default::<f64, f64>()?;
-    let load_numbers = make_chain_tt(&cast, &trans2, None)?;
-
-
-    let clamp = make_clamp(bounds)?;
-    let bounded_sum = make_bounded_sum(bounds)?;
-    let laplace = make_base_laplace(sigma)?;
-    let intermediate = make_chain_tt(&bounded_sum, &clamp, None)?;
-    let noisy_sum = make_chain_mt(&laplace, &intermediate, None)?;
-
-    // Get the data privatelly
-
-    //let privac = opendp::trans::
-    //let clf = new LogisticsRegression();
 
 */
-
-
-
-
-    /*
-    for row in conn.query("SELECT id, username, password, email FROM users", &[])? {
-        let id: i32 = row.get(0);
-        let username: &str = row.get(1);
-        let password: &str = row.get(2);
-        let email: &str = row.get(3);
-        println!(
-            "found app user: {}) {} | {} | {}",
-            id, username, password, email
-        );
-    }
-    */
-
-
     Ok(())
 
 }   
-
-
-
-/*
-fn main() -> Result<(), Error> {
-    let client = Client::connect("postgres://postgres:postgres@localhost:5432", NoTls)?;
-    let mut conn = client.get_txn()?;
-    let mut query = conn.query("SELECT * FROM users", &[])?;
-    let mut users: Vec<User> = Vec::new();
-    while let Some(row) = query.next()? {
-        let user: User = row.get(0);
-        users.push(user);
-    }
-    println!("{:?}", users);
-    Ok(())
-}
-
-
-
-fn main() {
-    println!("Hello, world!");
-}
-
-
-*/
-
 
