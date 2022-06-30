@@ -1,10 +1,11 @@
-use opendp::core::*;
+//use opendp::core::*;
 use postgres::{Client, Error, NoTls};
-use opendp::*;
+//use opendp::*;
 use ndarray::*;
 
+pub mod lr;
 
-type vec64_20 = Vec<(Option<f64>,
+type Vec64_20 = Vec<(Option<f64>,
     Option<f64>,
     Option<f64>,
     Option<f64>,
@@ -25,7 +26,9 @@ type vec64_20 = Vec<(Option<f64>,
     Option<f64>,
     Option<f64>)>;
 
-type vec64_21 = Vec<(Option<f64>,
+type VecVec64 = Vec<Vec<Option<f64>>>;
+
+type Vec64_21 = Vec<(Option<f64>,
     Option<f64>,
     Option<f64>,
     Option<f64>,
@@ -53,49 +56,7 @@ fn main() -> Result<(), Error> {
     let url = "postgresql://postgres:postgres@localhost:5432/postgres";
     let mut conn = Client::connect(url, NoTls).unwrap();
 
-/*
-    let mut query = conn.query("
-        CREATE TABLE IF NOT EXISTS users (
-            id              SERIAL PRIMARY KEY,
-            username        VARCHAR UNIQUE NOT NULL,
-            password        VARCHAR NOT NULL,
-            email           VARCHAR UNIQUE NOT NULL
-            )
-    ", &[]).unwrap();
-
-
-
-    query = conn.query(
-        "INSERT INTO users (username, password, email) VALUES ($1, $2, $3)",
-        &[&"user1", &"mypass", &"user@test.com"],
-    ).unwrap();
-
-
-*/
-
-    let mut sn : Vec<(Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>,
-                   Option<f64>)> = vec![];
-
-
+    let mut sn : VecVec64 = vec![];
 
 
     for row in conn.query("SELECT * from sn", &[])? {
@@ -123,7 +84,7 @@ fn main() -> Result<(), Error> {
         let var20 : Option<f64> = row.get(20);
 
 
-        sn.push((var00,
+        sn.push(vec![var00,
                   var01,
                   var02,
                   var03,
@@ -143,7 +104,7 @@ fn main() -> Result<(), Error> {
                   var17,
                   var18,
                   var19,
-                  var20));
+                  var20]);
 
         //println!(
         //    "row i : {}) {}",
@@ -151,41 +112,132 @@ fn main() -> Result<(), Error> {
         //);
     }
 
+    println!("{}", sn[0][0].unwrap());
+
+
+
     // Split dataset into train and test
-    let mut X_train : vec64_20 = vec![];
-    let mut X_test : vec64_20 = vec![];
-    let mut y_train : Vec<Option<f64>> = vec![];
-    let mut y_test : Vec<Option<f64>> = vec![];
+    let mut x_train_1 : VecVec64 = vec![];
+    let mut y_train_1 : Vec<Option<f64>> = vec![];
+    let mut x_test_1 : VecVec64 = vec![];
+    let mut y_test_1 : Vec<Option<f64>> = vec![];
 
     let mut i : i64 = 0;
-    let split : i64 = (sn.len() as f64 * 0.8) as i64;
+    let split : i64 = (sn.len() as f64 * 0.9) as i64;
     for n in sn {
         if i < split {
-            X_train.push((n.0, n.1, n.2, n.3, n.4, n.5, n.6, n.7, n.8, n.9, n.10, n.11, n.12, n.13, n.14, n.15, n.16, n.17, n.18, n.19));
-            y_train.push(n.20);
+            x_train_1.push(n[0..19].to_vec());
+            y_train_1.push(n[20]);
         } else {
-            X_test.push((n.0, n.1, n.2, n.3, n.4, n.5, n.6, n.7, n.8, n.9, n.10, n.11, n.12, n.13, n.14, n.15, n.16, n.17, n.18, n.19));
-            y_test.push(n.20);
+            x_test_1.push(n[0..19].to_vec());
+            y_test_1.push(n[20]);
         }
         i = i + 1;
     }
 
 
 
-    let mut x = Array::from_elem((X_train.len(),20),0.);
-    let mut x = Array::from_elem((y_train.len(),1),0.);
 
-    println!["Dimensions = {} x {}", x.dim().0, x.dim().1];
 
-    let ilen = x.dim().0 as i64;
-    let jlen = x.dim().1 as i64;
+    
+
+
+    let mut x_train = Array::from_elem((x_train_1.len(), 20), 0.);
+    let mut y_train = Array::from_elem((y_train_1.len(), 1), 0.);
+    println!("Dimensions train = {} x {}", x_train.dim().0, x_train.dim().1);
+
+    let ilen = x_train.dim().0 as i64;
+    let jlen = x_train.dim().1 as i64;
+
+    println!("Iterator {} x {}", ilen, jlen);
+
+    
+    for i in 0..ilen-1 {
+        for j in 0..jlen-1 {
+            x_train[[i as usize, j as usize]] = x_train_1[i as usize][j as usize].unwrap();
+        }
+        y_train[[i as usize,0]] = y_train_1[i as usize].unwrap();
+    }
+    
+
+    let mut x_test = Array::from_elem((x_test_1.len(), 20), 0.);
+    let mut y_test = Array::from_elem((y_test_1.len(), 1), 0.);
+    println!("Dimensions test = {} x {}", x_test.dim().0, x_test.dim().1);
+
+    let ilen = x_test.dim().0 as i64;
+    let jlen = x_test.dim().1 as i64;
 
     for i in 0..ilen-1 {
         for j in 0..jlen-1 {
-            x[[i as usize,j as usize]] = X_train[i as usize].0.unwrap();
+            x_test[[i as usize,j as usize]] = x_test_1[i as usize][j as usize].unwrap();
         }
-        x[[i as usize,0]] = y_train[i as usize].unwrap();
+        y_test[[i as usize,0]] = y_test_1[i as usize].unwrap();
     }
+
+
+
+
+    let mut cli = lr::LR::new("Opt");
+    let cliid = cli.get_id();
+    println!("{}",cliid);
+
+    let size_in = 20;
+    let size_l1 = 30;
+    let size_l2 = 30;
+    let size_out = 10;
+
+
+
+    println!("Dims x_train = {:?} and y_train = {}", x_train.shape()[0], y_train.ndim());
+
+    // Input shape 20 -> each row in x_train & x_test
+    // x_train.iter()
+    // Shape = x_train.dim().1 = 20
+    // let mut lo = Array::from_elem((1, size_in), 0.);
+
+    // Layer 1
+    let mut w1 = Array::from_elem((x_train.dim().1, size_l1), 0.);
+    let mut l1 = Array::from_elem((1, size_l1), 0.);
+
+    // Layer 2
+    let mut w2 = Array::from_elem((l1.dim().1, size_l2), 0.);
+    let mut l2 = Array::from_elem((1, size_l2), 0.);
+
+    
+    // Output shape 10 (num of classes) -> match with y_train & y_test
+    let mut wo = Array::from_elem((l2.dim().1, size_out), 0.);
+    let mut lo = Array::from_elem((1, size_out), 0.);
+
+
+    // Train model on data
+    for n in x_train {
+
+        // Forward
+
+        // Error
+
+        // Backward
+
+    }
+
+
+    // Test model on data
+    for n in x_test {
+
+        // Forward
+
+        // Error
+        
+
+
+
+
+    }
+
+
+
+
+
 
 
 
