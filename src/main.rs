@@ -1,6 +1,7 @@
 use opendp::core::*;
 use postgres::{Client, Error, NoTls};
 use opendp::*;
+use ndarray::*;
 
 
 type vec64_20 = Vec<(Option<f64>,
@@ -171,7 +172,26 @@ fn main() -> Result<(), Error> {
 
 
 
+    let mut x = Array::from_elem((X_train.len(),20),0.);
+    let mut x = Array::from_elem((y_train.len(),1),0.);
 
+    println!["Dimensions = {} x {}", x.dim().0, x.dim().1];
+
+    let ilen = x.dim().0 as i64;
+    let jlen = x.dim().1 as i64;
+
+    for i in 0..ilen-1 {
+        for j in 0..jlen-1 {
+            x[[i as usize,j as usize]] = X_train[i as usize].0.unwrap();
+        }
+        x[[i as usize,0]] = y_train[i as usize].unwrap();
+    }
+
+
+
+
+    
+/*
     use opendp::meas::make_base_gaussian;
 
     let epsilon = 3.0;
@@ -179,7 +199,7 @@ fn main() -> Result<(), Error> {
 
     let meas1 = opendp::meas::make_base_gaussian(epsilon, X_train);
     let meas2 = opendp::meas::make_base_gaussian(epsilon, X_test);
-    
+*/  
 
 /*
     // Privatelly transform the data

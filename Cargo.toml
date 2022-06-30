@@ -8,7 +8,16 @@ edition = "2021"
 [dependencies]
 opendp = { version = "0.4.0", features = ["contrib"] }
 postgres = "0.19"
+ndarray = { version = "0.15", features = ["approx"] }
+ndarray-stats = "0.5.0"
+num-traits = "0.2"
 
+argmin = { version = "0.4.6", features = ["ndarray", "ndarray-rand"] }
+serde = "1.0"
+thiserror = "1.0"
 
+# linfa = { version = "0.6.0", path = "../..", features=["serde"] }
 
-
+[dev-dependencies]
+approx = "0.4"
+#linfa-datasets = { version = "0.6.0", path = "../../datasets", features = ["winequality"] }
