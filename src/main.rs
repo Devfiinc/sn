@@ -7,7 +7,7 @@ extern crate nalgebra as na;
 use rand::Rng;
 use na::{DMatrix, Hessenberg, Matrix4};
 
-pub mod lr;
+pub mod nn;
 
 
 type VecVec64 = Vec<Vec<Option<f64>>>;
@@ -142,44 +142,42 @@ fn main() -> Result<(), Error> {
 
 
 
-    //for i in 0..19 {
-    //    println!("{} - {}", i, x_train[[0,i as usize]]);
-    //}
-    //println!("{} - {}", 19, x_train[[0,19 as usize]]);
-    //println!("{} - {}", 20, y_train[[0,0 as usize]]);
-
-
     let size_li = x_train.dim().1;
     let size_l1 = 30;
     let size_l2 = 30;
     let size_lo = 10;
-
-
-
-    let aaa = rand::random::<f64>();
-    
 
     let w1 = na::DMatrix::from_fn(size_li, size_l1, |r,c| {rand::random::<f64>() - 0.5});
     let w2 = na::DMatrix::from_fn(size_l1, size_l2, |r,c| {rand::random::<f64>() - 0.5});
     let w3 = na::DMatrix::from_fn(size_l2, size_lo, |r,c| {rand::random::<f64>() - 0.5});
 
     let mut l1 = na::DMatrix::from_element(size_l1, 1, 0.);
-    //let mut l2 = na::DMatrix::from_element(1, size_l2, 0.);
-    //let mut lo = na::DMatrix::from_element(1, size_lo, 0.);
+    let mut l2 = na::DMatrix::from_element(size_l2, 1, 0.);
+    let mut lo = na::DMatrix::from_element(size_lo, 1, 0.);
+
+
+    let mut cli = nn::NN::new(vec![size_li, size_l1, size_l2, size_lo], 0.01, false);
+
 
     let mut idx : usize = 0;
     for x in x_train_1 {
-        let li = na::DMatrix::from_vec(size_li, 1, x.to_vec());
+        let li = na::DMatrix::<f64>::from_vec(size_li, 1, x.iter().map(|x| x.unwrap()).collect());
 
-        //l1 = li * w1;
+        l1 = li.transpose() * &w1;
+        l1 = l1.map(|x| x.tanh());
+
+        l2 = l1 * &w2;
+        l2 = l2.map(|x| x.tanh());
+
+        lo = l2 * &w3;
+        lo = lo.map(|x| x.tanh());
+
 
         //let l1_sigmoid = l1.mapv(|x| 1. / (1. + (-x).exp()));
 
         //let l1 = li.dot(w1);
         //let dynamic_times_static: na::DVector<_> = dynamic_m * dynamic_m;
 
-
-        l1.gemm_tr(&li, &w1);
 
 
 
@@ -195,7 +193,7 @@ fn main() -> Result<(), Error> {
 
 
 
-        //println!("{}", idx);
+        println!("{}", idx);
         idx += 1;
     }
 
