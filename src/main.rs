@@ -181,10 +181,10 @@ fn main() -> Result<(), Error> {
     let cliid = cli.get_id();
     println!("{}",cliid);
 
-    let size_in = 20;
+    let size_l0 = 20;
     let size_l1 = 30;
     let size_l2 = 30;
-    let size_out = 10;
+    let size_lo = 10;
 
 
 
@@ -196,23 +196,49 @@ fn main() -> Result<(), Error> {
     // let mut lo = Array::from_elem((1, size_in), 0.);
 
     // Layer 1
-    let mut w1 = Array::from_elem((x_train.dim().1, size_l1), 0.);
-    let mut l1 = Array::from_elem((1, size_l1), 0.);
+    let mut w1 = Array::from_elem((size_li, size_l1), 0.);
+    //let mut l1 = Array::from_elem((1, size_l1), 0.);
 
     // Layer 2
-    let mut w2 = Array::from_elem((l1.dim().1, size_l2), 0.);
-    let mut l2 = Array::from_elem((1, size_l2), 0.);
+    let mut w2 = Array::from_elem((size_l1, size_l2), 0.);
+    //let mut l2 = Array::from_elem((1, size_l2), 0.);
 
     
     // Output shape 10 (num of classes) -> match with y_train & y_test
-    let mut wo = Array::from_elem((l2.dim().1, size_out), 0.);
-    let mut lo = Array::from_elem((1, size_out), 0.);
+    let mut wo = Array::from_elem((size_l2, size_lo), 0.);
+    //let mut lo = Array::from_elem((1, size_out), 0.);
+
+
+
+
+    let ilen = x_train.dim().0 as i64;
+    let jlen = x_train.dim().1 as i64;
+
+    println!("Iterator {} x {}", ilen, jlen);
+
+
+
 
 
     // Train model on data
-    for n in x_train {
+    for row in x_train.genrows() {
+        
+        let mut l0 = Array::from_elem((1, 20), 0.);
+        for j in 0..jlen-1 {
+            l0[[0, j as usize]] = row[[j as usize]];
+            //println!("{:?}", l0[[j as usize]]);
+        }
+
+        //println!("{}", type(l0));
+        //println!("{} {} {} {} {} {}", l0.dim().0, l0.dim().1, w1.dim().0, w1.dim().1, l1.dim().0, l1.dim().1);
 
         // Forward
+        let mut l1 = l0 * w1.clone();
+        //l1 = fact(l1);
+        let mut l2 = l1 * w2.clone();
+        //l2 = fact(l2);
+        let mut lo = l2 * wo.clone();
+        //lo = fact(lo);
 
         // Error
 
@@ -227,7 +253,7 @@ fn main() -> Result<(), Error> {
         // Forward
 
         // Error
-        
+
 
 
 
