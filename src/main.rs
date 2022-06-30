@@ -27,58 +27,30 @@ fn main() -> Result<(), Error> {
 
     for row in conn.query("SELECT * from sn", &[])? {
 
-        let var00 : Option<f64> = row.get(0);
-        let var01 : Option<f64> = row.get(1);
-        let var02 : Option<f64> = row.get(2);
-        let var03 : Option<f64> = row.get(3);
-        let var04 : Option<f64> = row.get(4);
-        let var05 : Option<f64> = row.get(5);
-        let var06 : Option<f64> = row.get(6);
-        let var07 : Option<f64> = row.get(7);
-        let var08 : Option<f64> = row.get(8);
-        let var09 : Option<f64> = row.get(9);
-        let var10 : Option<f64> = row.get(10);
-        let var11 : Option<f64> = row.get(11);
-        let var12 : Option<f64> = row.get(12);
-        let var13 : Option<f64> = row.get(13);
-        let var14 : Option<f64> = row.get(14);
-        let var15 : Option<f64> = row.get(15);
-        let var16 : Option<f64> = row.get(16);
-        let var17 : Option<f64> = row.get(17);
-        let var18 : Option<f64> = row.get(18);
-        let var19 : Option<f64> = row.get(19);
-        let var20 : Option<f64> = row.get(20);
-
-
-        sn.push(vec![var00,
-                     var01,
-                     var02,
-                     var03,
-                     var04,
-                     var05,
-                     var06,
-                     var07,
-                     var08,
-                     var09,
-                     var10,
-                     var11,
-                     var12,
-                     var13,
-                     var14,
-                     var15,
-                     var16,
-                     var17,
-                     var18,
-                     var19,
-                     var20]);
-
-        //println!(
-        //    "row i : {}) {}",
-        //    var00.unwrap(), var01.unwrap()
-        //);
+        sn.push(vec![row.get(0),
+                     row.get(1),
+                     row.get(2),
+                     row.get(3),
+                     row.get(4),
+                     row.get(5),
+                     row.get(6),
+                     row.get(7),
+                     row.get(8),
+                     row.get(9),
+                     row.get(10),
+                     row.get(11),
+                     row.get(12),
+                     row.get(13),
+                     row.get(14),
+                     row.get(15),
+                     row.get(16),
+                     row.get(17),
+                     row.get(18),
+                     row.get(19),
+                     row.get(20)]);
     }
-
-    println!("{}", sn[0][0].unwrap());
+    
+    //println!("{}", sn[0][0].unwrap());
 
 
 
@@ -162,15 +134,42 @@ fn main() -> Result<(), Error> {
     let mut idx : usize = 0;
     for x in x_train_1 {
         let li = na::DMatrix::<f64>::from_vec(size_li, 1, x.iter().map(|x| x.unwrap()).collect());
+        //let lib = na::DMatrix::from_element(size_l1, 1, 1.);
+        // Add bias
+
 
         l1 = li.transpose() * &w1;
-        l1 = l1.map(|x| x.tanh());
+        //l1 = l1.map(|x| x.tanh());
+        l1 = l1.map(|x| nn::NN::sigmoid(x));
 
         l2 = l1 * &w2;
-        l2 = l2.map(|x| x.tanh());
+        //l2 = l2.map(|x| x.tanh());
+        l2 = l2.map(|x| nn::NN::sigmoid(x));
 
         lo = l2 * &w3;
-        lo = lo.map(|x| x.tanh());
+        //lo = lo.map(|x| x.tanh());
+        lo = lo.map(|x| nn::NN::sigmoid(x));
+
+
+
+        let err = lo - y_train[idx];
+
+
+
+        MatrixXd err = ((double) epsilon)/((double) minibatch_size) * ((a2 - mbY).array() * sigmoid_derivative(z2).array()).matrix();
+
+        //std::cout << err << std::endl;
+        lo = lo - err * ones;
+        w2 = w3 - (err * a1.transpose());
+
+        err = ((w2.transpose() * err).array() * sigmoid_derivative(z1).array()).matrix();
+
+        //std::cout << err << std::endl;
+
+        b1 = b1 - err * ones;
+        w1 = w1 - (err * mbX.transpose());
+
+
 
 
         //let l1_sigmoid = l1.mapv(|x| 1. / (1. + (-x).exp()));
