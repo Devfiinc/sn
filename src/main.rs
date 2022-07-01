@@ -118,87 +118,118 @@ fn main() -> Result<(), Error> {
     let size_l1 = 30;
     let size_l2 = 30;
     let size_lo = 10;
+    let learning_rate = 0.001;
 
-    let w1 = na::DMatrix::from_fn(size_li, size_l1, |r,c| {rand::random::<f64>() - 0.5});
-    let w2 = na::DMatrix::from_fn(size_l1, size_l2, |r,c| {rand::random::<f64>() - 0.5});
-    let w3 = na::DMatrix::from_fn(size_l2, size_lo, |r,c| {rand::random::<f64>() - 0.5});
+    let mut wi1 = na::DMatrix::from_fn(size_li + 1, size_l1, |r,c| {rand::random::<f64>() - 0.5});
+    let mut w12 = na::DMatrix::from_fn(size_l1 + 1, size_l2, |r,c| {rand::random::<f64>() - 0.5});
+    let mut w2o = na::DMatrix::from_fn(size_l2 + 1, size_lo, |r,c| {rand::random::<f64>() - 0.5});
 
+    let mut li = na::DMatrix::from_element(size_l1, 1, 0.);
     let mut l1 = na::DMatrix::from_element(size_l1, 1, 0.);
     let mut l2 = na::DMatrix::from_element(size_l2, 1, 0.);
     let mut lo = na::DMatrix::from_element(size_lo, 1, 0.);
+    
+    let mut a1 = na::DMatrix::from_element(size_l1 + 1, 1, 0.);
+    let mut a2 = na::DMatrix::from_element(size_l2 + 1, 1, 0.);
+    let mut ao = na::DMatrix::from_element(size_lo, 1, 0.);
 
+    let mut bi = na::DMatrix::from_element(size_li + 1, 1, 0.);
+    let mut b1 = na::DMatrix::from_element(size_l1 + 1, 1, 0.);
+    let mut b2 = na::DMatrix::from_element(size_l2 + 1, 1, 0.);
+
+    bi[(0,0)] = 1.;
+    b1[(0,0)] = 1.;
+    b2[(0,0)] = 1.;
+
+    let mut delta1 = na::DMatrix::from_element(size_l1 + 1, 1, 0.);
+    let mut delta2 = na::DMatrix::from_element(size_l2 + 1, 1, 0.);
+    let mut deltao = na::DMatrix::from_element(size_lo, 1, 0.);
 
     let mut cli = nn::NN::new(vec![size_li, size_l1, size_l2, size_lo], 0.01, false);
 
 
     let mut idx : usize = 0;
     for x in x_train_1 {
-        let li = na::DMatrix::<f64>::from_vec(size_li, 1, x.iter().map(|x| x.unwrap()).collect());
-        //let lib = na::DMatrix::from_element(size_l1, 1, 1.);
-        // Add bias
+        //let mut li = na::DMatrix::<f64>::from_vec(size_li, 1, x.iter().map(|x| x.unwrap()).collect());
+        //let zi = li + &bi;
+        li = na::DMatrix::<f64>::from_vec(size_li, 1, x.iter().map(|x| x.unwrap()).collect());
+        li = li.insert_row(0, 1.0);
+        //let zi = li;
 
+        println!("l1");
+        l1 = li.transpose() * &wi1;
+        l1 = l1.insert_column(0, 1.0);
+        a1 = l1.map(|x| nn::NN::sigmoid(x));
 
-        l1 = li.transpose() * &w1;
-        //l1 = l1.map(|x| x.tanh());
-        l1 = l1.map(|x| nn::NN::sigmoid(x));
+        println!("l2");
+        l2 = l1 * &w12;
+        l2 = l2.insert_column(0, 1.0);
+        a2 = l2.map(|x| nn::NN::sigmoid(x));
 
-        l2 = l1 * &w2;
-        //l2 = l2.map(|x| x.tanh());
-        l2 = l2.map(|x| nn::NN::sigmoid(x));
-
-        lo = l2 * &w3;
-        //lo = lo.map(|x| x.tanh());
-        lo = lo.map(|x| nn::NN::sigmoid(x));
-
-
-
-        let err = lo - y_train[idx];
-
-
-
-        MatrixXd err = ((double) epsilon)/((double) minibatch_size) * ((a2 - mbY).array() * sigmoid_derivative(z2).array()).matrix();
-
-        //std::cout << err << std::endl;
-        lo = lo - err * ones;
-        w2 = w3 - (err * a1.transpose());
-
-        err = ((w2.transpose() * err).array() * sigmoid_derivative(z1).array()).matrix();
-
-        //std::cout << err << std::endl;
-
-        b1 = b1 - err * ones;
-        w1 = w1 - (err * mbX.transpose());
+        println!("lo");
+        lo = l2 * &w2o;
+        ao = lo.map(|x| nn::NN::sigmoid(x));
+        
+        println!("ly");
+        let y : i64 = y_train_1[idx].unwrap() as i64;
+        let mut ly = na::DMatrix::from_element(size_lo, 1, 0.);
+        ly[(y as usize,0)] = 1.;
 
 
 
 
-        //let l1_sigmoid = l1.mapv(|x| 1. / (1. + (-x).exp()));
+        deltao = lo - ly.transpose();
 
-        //let l1 = li.dot(w1);
-        //let dynamic_times_static: na::DVector<_> = dynamic_m * dynamic_m;
+        println!("deltao {} {}", deltao.shape().0, deltao.shape().1);
+        println!("w2o    {} {}", w2o.shape().0, w2o.shape().1);
 
+        delta2 = deltao * w2o.transpose();
 
+        println!("delta2 {} {}", delta2.shape().0, delta2.shape().1);
+        println!("w12    {} {}", w12.shape().0, w12.shape().1);
 
-
-//        let l1 = Layer::new(size_l1, size_li, ActivationFunction::Sigmoid);
-//
-//        let l2 = Layer::new(size_l2, size_l1, ActivationFunction::Sigmoid);
-//
-//        let lo = Layer::new(size_lo, size_l2, ActivationFunction::Sigmoid);
-//
-//        let mut net = NeuralNetwork::new(li, l1, l2, lo);
+        //delta1 = delta2 * w12.transpose();
 
 
 
 
+        /*
+        
+        println!("deltao");
+        deltao = lo - ly.transpose();
+        println!("{} {}", deltao[(0,0)], deltao[(0,1)]);
+        
+        println!("deltao");
+        delta2 = deltao * w2o.transpose(); // * a2.map(|x| nn::NN::sigmoid_derivative(x));
+        delta2 = delta2.component_mul(&a2.map(|x| nn::NN::sigmoid_derivative(x)));
+        println!("{} {}", delta2[(0,0)], delta2[(0,1)]);
+        
+        println!("delta2 {} {}", delta2.shape().0, delta2.shape().1);
+        println!("w12 {} {}", w12.shape().0, w12.shape().1);
+        println!("delta1 {} {}", delta1.shape().0, delta1.shape().1);
+        println!("a1 {} {}", a1.shape().0, a1.shape().1);
+        delta1 = delta2 * w12;
+        delta1 = delta1.component_mul(&a1.map(|x| nn::NN::sigmoid_derivative(x)));
+        println!("{} {}", delta1[(0,0)], delta1[(0,1)]);
+        
+        break;
+        
+        println!("w");
+        //w2o = w2o.clone() - &(deltao * &a2.transpose() * learning_rate);
+        //w12 = w12.clone() - &(delta2 * &a1.transpose() * learning_rate);
+        //wi1 = wi1.clone() - &(delta1 * &li.transpose() * learning_rate);
+
+        // * &lo.map(|x| nn::NN::sigmoid_derivative(x))
+
+    
+
+        break;
+        
+        */
 
         println!("{}", idx);
         idx += 1;
     }
-
-    //let li = DMatrix::from_vec(size_li, size_l1, x_train.iter().map(|x| *x).collect());
-    //let li = na::DMatrix::from_vec(size_li, size_l1, vec!(x_train[[0][0..size_li]].to_vec()));
-
 
 
 
