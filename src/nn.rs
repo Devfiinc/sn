@@ -7,20 +7,43 @@ use na::{DMatrix, Hessenberg, Matrix4};
 pub struct NN {
     _topology : Vec<usize>,
     _learning_rate : f64,
-    _debug : bool
+    _debug : bool,
+    _neuron_layers : Vec<na::DMatrix::<f64>>,
+    _cache_layers : Vec<na::DMatrix::<f64>>,
+    _deltas : Vec<na::DMatrix::<f64>>,
+    _weights : Vec<na::DMatrix::<f64>>
 }
 
 impl NN {
     // Construct NN
     pub fn new(topology : Vec<usize>, learning_rate : f64, debug : bool) -> NN{
-        NN {
+        let mut nn = NN {
             _topology : topology,
             _learning_rate : learning_rate,
-            _debug : debug
+            _debug : debug,
+            _neuron_layers : vec![],
+            _cache_layers : vec![],
+            _deltas : vec![],
+            _weights : vec![]
+        };
+
+        for i in 0..nn._topology.len() {
+            if i == nn._topology.len() -1 {
+                nn._neuron_layers.push(na::DMatrix::from_element(nn._topology[i], 1, 0.))
+            }
+            else {
+                nn._neuron_layers.push(DMatrix::from_element(nn._topology[i], 1, 0.));
+                nn._cache_layers.push(DMatrix::from_element(nn._topology[i], 1, 0.));
+                nn._deltas.push(DMatrix::from_element(nn._topology[i], 1, 0.));
+            }
         }
+
+        return nn;
     }
 
-
+    pub fn get_learning_rate(&self) -> f64{
+        return self._learning_rate;
+    }
 
 
     /*

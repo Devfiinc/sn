@@ -1,6 +1,5 @@
-//use opendp::core::*;
+
 use postgres::{Client, Error, NoTls};
-//use opendp::*;
 use ndarray::*;
 
 extern crate nalgebra as na;
@@ -16,6 +15,27 @@ type VecVec64 = Vec<Vec<Option<f64>>>;
 use rand::thread_rng;
 use rand::seq::SliceRandom;
 
+//use opendp::*;
+use opendp::core::*;
+use opendp::meas::{make_base_geometric};
+
+use opendp::core::{Domain, Function, Measure, Measurement, Metric, PrivacyRelation};
+use opendp::dom::AllDomain;
+use opendp::error::*;
+use opendp::traits::{CheckNull, InfSub};
+
+
+//use opendp::trans::{make_identity};
+//use opendp::dom::*;//{VectorDomain, AllDomain};
+//use opendp::dist::{SymmetricDistance};
+
+//use opendp::core::{Function, Measurement, PrivacyRelation};
+//use opendp::dist::{IntDistance, L1Distance, SmoothedMaxDivergence};
+//use opendp::dom::{AllDomain, MapDomain};
+//use opendp::error::Fallible;
+//use opendp::samplers::SampleLaplace;
+//use opendp::traits::{CheckNull, InfCast};
+
 
 
 
@@ -25,7 +45,6 @@ fn main() -> Result<(), Error> {
     let mut conn = Client::connect(url, NoTls).unwrap();
 
     let mut sn : VecVec64 = vec![];
-
 
     for row in conn.query("SELECT * from sn", &[])? {
 
@@ -76,34 +95,17 @@ fn main() -> Result<(), Error> {
         i = i + 1;
     }
 
+    /*
     for i in 0..100 {
         println!("{} {} {}", x_train_1[i][0].unwrap(), x_train_1[i][1].unwrap(), y_train_1[i].unwrap());
-
-    }
-
-/*
-    let mut cnt : Vec<i64> = vec![0; 10];
-
-    for n in y_test_1 {
-        let a = n.unwrap() as i64 as usize;
-        cnt[a] = cnt[a] + 1;
-    }
-
-    for i in 0..10 {
-        println!("{}", cnt[i]);
     }
     */
 
-    /*
-    for i in 0..y_train_1.len() {
-        cnt[y_train_1[i].unwrap() as usize] = cnt[y_train_1[i].unwrap() as usize] + 1;
-    }
-    */
+
 
 
     
 /*
-
     let mut x_train = Array::from_elem((x_train_1.len(), 20), 0.);
     let mut y_train = Array::from_elem((y_train_1.len(), 1), 0.);
     println!("Dimensions train = {} x {}", x_train.dim().0, x_train.dim().1);
@@ -135,14 +137,11 @@ fn main() -> Result<(), Error> {
         }
         y_test[[i as usize,0]] = y_test_1[i as usize].unwrap();
     }
-
-
 */
 
 
 
 
-    
 
     let size_li = x_train_1[0].len();
     let size_l1 = 30;
@@ -175,7 +174,12 @@ fn main() -> Result<(), Error> {
     let mut delta2 = na::DMatrix::from_element(size_l2, 1, 0.);
     let mut deltao = na::DMatrix::from_element(size_lo, 1, 0.);
 
-    let mut cli = nn::NN::new(vec![size_li, size_l1, size_l2, size_lo], 0.01, false);
+    let mut nna = nn::NN::new(vec![size_li, size_l1, size_l2, size_lo], 0.01, false);
+
+    println!("Learning rate {}", nna.get_learning_rate());
+
+
+    /*
 
 
     let mut idx : usize = 0;
@@ -220,14 +224,6 @@ fn main() -> Result<(), Error> {
         }
     }
 
-
-
-
-
-
-
-
-
     let mut correct : i64 = 0;
     let mut total : i64 = 0;
     idx = 0;
@@ -267,6 +263,7 @@ fn main() -> Result<(), Error> {
     }
 
 
+    */
 
 
     Ok(())
