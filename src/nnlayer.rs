@@ -38,9 +38,9 @@ impl NNLayer {
             _f_act : f_act,
         
             _weights : na::DMatrix::from_fn(input_size, output_size, |r,c| {rand::random::<f64>() - 0.5}),
-            _qvalues : na::DMatrix::from_element(input_size + 1, 1, 0.),
-            _qvaluesu : na::DMatrix::from_element(input_size + 1, 1, 0.), 
-            _input : na::DMatrix::from_element(input_size + 1, 1, 0.),
+            _qvalues : na::DMatrix::from_element(1, input_size + 1, 0.),
+            _qvaluesu : na::DMatrix::from_element(1, input_size + 1, 0.), 
+            _input : na::DMatrix::from_element(1, input_size + 1, 0.),
         
             //Adam Optimizer
             _m : na::DMatrix::from_element(input_size, output_size, 0.), 
@@ -61,19 +61,20 @@ impl NNLayer {
     }
 
     pub fn forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-        let mut input_with_bias = na::DMatrix::from_element(self._input_size + 1, 1, 0.);
+        let mut input_with_bias = na::DMatrix::from_element(1, input.ncols() + 1, 0.);
 
-        for i in 0..input.nrows() {
-            input_with_bias[(i,0)] = input[(i,0)];
+        for i in 0..input.ncols() {
+            input_with_bias[(0,i)] = input[(0,i)];
         }
-        input_with_bias[(input.nrows(),0)] = 1.0;
+        input_with_bias[(0,input.ncols())] = 1.0;
 
-        self._input = na::DMatrix::from_element(self._input_size + 1, 1, 0.);
+        //self._input = na::DMatrix::from_element(1, self._input_size + 1, 0.);
         self._input = input_with_bias.clone();
 
+        //println!("input with bias {} {}", input_with_bias.nrows(), input_with_bias.transpose().ncols());
+        //println!("weights          {} {}", self._weights.nrows(), self._weights.ncols());
         self._qvalues = input_with_bias * self._weights.clone();
         self._qvaluesu = self._qvalues.clone();
-    
     
         if self._f_act == String::from("relu") {
             self._qvalues = self._qvalues.map(|x| fact::relu(x));
@@ -88,6 +89,7 @@ impl NNLayer {
             self._qvalues = self._qvalues.map(|x| fact::linear(x));
         }
         
+        //println!("qvalues         {} {}", self._qvalues.nrows(), self._qvalues.ncols());
         return self._qvalues.clone();
     }
 
@@ -130,10 +132,10 @@ impl NNLayer {
 
 
     pub fn backward(&mut self, gradient_from_above : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-        let mut adjusted_mul = na::DMatrix::from_element(gradient_from_above.nrows(), 1, 0.);
+        let mut adjusted_mul = na::DMatrix::from_element(1, gradient_from_above.ncols(), 0.);
         adjusted_mul = gradient_from_above.clone();
 
-        let mut qvalues_temp = na::DMatrix::from_element(self._qvaluesu.nrows(), 1, 0.);
+        let mut qvalues_temp = na::DMatrix::from_element(1, self._qvaluesu.ncols(), 0.);
         qvalues_temp = self._qvaluesu.clone();
 
 
@@ -150,19 +152,24 @@ impl NNLayer {
             self._qvalues = self._qvalues.map(|x| fact::linear_derivative(x));
         }
 
-        for i in 0..adjusted_mul.nrows() {
-            adjusted_mul[(i,0)] = qvalues_temp[(i,0)] * gradient_from_above[(i,0)];
+        //println!("adjusted_mul {} {}", adjusted_mul.nrows(), adjusted_mul.ncols());
+        //println!("qvalues_temp {} {}", qvalues_temp.nrows(), qvalues_temp.ncols());
+        //println!("gradient_from_above {} {}", gradient_from_above.nrows(), gradient_from_above.ncols());
+        for i in 0..adjusted_mul.ncols() {
+            adjusted_mul[(0,i)] = qvalues_temp[(0,i)] * gradient_from_above[(0,i)];
         }
 
-        let mut delta_i = na::DMatrix::from_element(self._input.nrows() - 1, 1, 0.);
-        let mut delta_i_tmp = na::DMatrix::from_element(self._input.nrows(), 1, 0.);
+        let mut delta_i = na::DMatrix::from_element(1, self._input.ncols() - 1, 0.);
+        let mut delta_i_tmp = na::DMatrix::from_element(1, self._input.ncols(), 0.);
 
+        //println!("adjusted_mul {} {}", adjusted_mul.nrows(), adjusted_mul.ncols());
+        //println!("self._weights {} {}", self._weights.nrows(), self._weights.ncols());
         delta_i_tmp = &adjusted_mul * self._weights.transpose();
         for i in 0..delta_i.nrows() {
             delta_i[(i,0)] = delta_i_tmp[(i,0)];
         }
         
-        let mut D_i = na::DMatrix::from_element(self._input.nrows(), adjusted_mul.nrows(), 0.);
+        let mut D_i = na::DMatrix::from_element(self._input.ncols(), adjusted_mul.ncols(), 0.);
         for i in 0..self._input.nrows() {
             for j in 0..adjusted_mul.nrows() {
                 D_i[(i,j)] = self._input[(i,0)] * adjusted_mul[(j,0)];

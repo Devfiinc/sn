@@ -151,8 +151,8 @@ fn main() -> Result<(), Error> {
 
 
     let size_li = x_train_1[0].len();
-    let size_l1 = 30;
-    let size_l2 = 30;
+    let size_l1 = 50;
+    let size_l2 = 50;
     let size_lo = 10;
     let learning_rate = 0.001;
 
@@ -182,11 +182,71 @@ fn main() -> Result<(), Error> {
     let mut deltao = na::DMatrix::from_element(size_lo, 1, 0.);
 
     let mut nna = nn::NN::new(vec![           size_li,           size_l1,           size_l2,              size_lo],
-                              vec!["relu".to_string(),"relu".to_string(),"relu".to_string(),"sigmoid".to_string()], 
+                              vec!["relu".to_string(),"relu".to_string(),"relu".to_string(),"softmax".to_string()], 
                                                                                                              0.005, 
                                                                                                              false);
 
     println!("Learning rate {}", nna.get_learning_rate());
+
+    let mut tot : i64 = x_train_1.len() as i64;
+    let mut xi : i64 = 0;
+    let mut y = na::DMatrix::from_element(size_lo, 1, 0.);
+
+
+    for i in 0..x_train_1.len() {
+        println!("Training  {} / {}", xi, tot);
+        xi = xi + 1;
+        li = na::DMatrix::<f64>::from_vec(size_li, 1, x_train_1[i].iter().map(|x| x.unwrap()).collect());
+        lo = nna.forward(li.clone());
+
+        let mut maxid : usize = 0;
+        let mut maxval : f64 = 0.0;
+        for j in 0..lo.ncols(){
+            if lo[(0,j)] > maxval {
+                maxid = j;
+                maxval = lo[(0,j)];
+            }
+            //print!("{} ", lo[(0,j)]);
+        }
+        //println!();
+
+
+        let mut vy = na::DMatrix::from_element(1, size_lo, 0.);
+        let y = y_train_1[i].unwrap();
+        vy[(0,y as usize)] = 1.;
+        nna.backward(lo.clone(), vy.clone());
+    }
+
+
+    let mut correct : i64 = 0;
+    let mut total : i64 = 0;
+
+    xi = 0;
+    tot = x_test_1.len() as i64;
+
+    for i in 0..x_test_1.len() {
+        println!("Testing   {} / {}", xi, tot);
+        xi = xi + 1;
+        li = na::DMatrix::<f64>::from_vec(size_li, 1, x_test_1[i].iter().map(|x| x.unwrap()).collect());
+        lo = nna.forward(li.clone());
+
+        let mut maxid : usize = 0;
+        let mut maxval : f64 = 0.0;
+        for j in 0..lo.ncols(){
+            if lo[(0,j)] > maxval {
+                maxid = j;
+                maxval = lo[(0,j)];
+            }
+            //print!("{} ", lo[(0,j)]);
+        }
+        //println!();
+
+        if maxid == y_test_1[i].unwrap() as usize {
+            correct = correct + 1;
+        }
+    }
+
+    println!("Accuracy: {} / {} = {}%\n", correct, tot, (correct as f64 / tot as f64) * 100.);
 
 
     /*

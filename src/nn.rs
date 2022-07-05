@@ -37,10 +37,12 @@ impl NN {
 
     // Forward propagation
     pub fn forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-        let mut vals = na::DMatrix::from_element(input.len() + 1, 1, 0.);
-        vals = input.clone();
+        let mut vals = na::DMatrix::from_element(1, input.nrows(), 0.);
+        vals = input.transpose().clone();
 
+        //println!("Vals init {} x {}", vals.nrows(), vals.ncols());
         for i in 0..self._model.len() {
+        //    println!("Layer {} of {} - vals {} x {}", i+1, self._model.len(), vals.nrows(), vals.ncols());
             vals = self._model[i].forward(vals.clone());
         }
 
@@ -54,7 +56,10 @@ impl NN {
         let mut delta = na::DMatrix::from_element(actions.nrows(), 1, 0.);
         delta = actions.clone() - experimentals.clone();
 
-        for i in 0..self._model.len() - 1 {
+        //println!("Vals init {} x {}", delta.nrows(), delta.ncols());
+        //for i in (0..self._model.len() - 1).rev() {
+        for i in (0..self._model.len()).rev() {
+            //println!("Layer {} of {} - vals {} x {}", i+1, self._model.len(), delta.nrows(), delta.ncols());
             delta = self._model[i].backward(delta.clone());
         }
     }
