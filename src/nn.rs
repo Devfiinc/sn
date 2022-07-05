@@ -71,7 +71,20 @@ impl NN {
 
     // Train
     pub fn train(&mut self, num_episodes : i64, max_steps : i64, target_upd : i64, exp_upd : i64) {
+        let mut observation = na::DMatrix::from_element(2, 1, 0.);
+        let mut observation1 = na::DMatrix::from_element(2, 1, 0.);
         
+        let mut action : i64;
+        let mut reward : f64 = 0.0;
+
+        for episode in 0..num_episodes {
+            
+        }
+
+
+
+
+
     }
 
 
