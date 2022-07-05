@@ -92,10 +92,40 @@ impl NNLayer {
     }
 
 
-    pub fn update_weights() {
+    pub fn update_weights(&mut self, gradient : na::DMatrix::<f64>) {
+        let m_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
+        let v_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
+        let m_temp_hat = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
+        let v_temp_hat = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
 
+        m_temp = self._m.clone();
+        v_temp = self._v.clone();
 
+        m_temp = self._beta_1 * m_temp + (1.0 - self._beta_1) * gradient.clone();
 
+        let gradient2 = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
+        for i in 0..gradient.nrows() {
+            for j in 0..gradient.ncols() {
+                gradient2[(i,j)] = gradient[(i,j)] * gradient[(i,j)];
+            }
+        }
+
+        v_temp = self._beta_2 * v_temp + (1.0 - self._beta_2) * gradient2.clone();
+        // v_temp = self._beta_2 * v_temp + (1.0 - self._beta_2) * gradient.clone().powf(2.0);
+
+        m_vec_hat = m_temp / (1.0 - self._beta_1.powf(self._time + 0.1));
+        v_vec_hat = v_temp / (1.0 - self._beta_2.powf(self._time + 0.1));
+
+        let weights_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
+        
+        for i in 0..self._weights.nrows() {
+            for j in 0..self._weights.ncols() {
+                weights_temp[(i,j)] = self._weights[(i,j)] - self._learning_rate * m_vec_hat[(i,j)] / (v_vec_hat[(i,j)] + self._adam_epsilon);
+            }
+        }
+
+        self._m = m_temp.clone();
+        self._v = v_temp.clone();
     }
 
 
