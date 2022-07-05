@@ -4,7 +4,7 @@ pub fn sigmoid(x : f64) -> f64 {
 }
 
 pub fn sigmoid_derivative(x : f64) -> f64 {
-    let sigmoid_x = NN::sigmoid(x);
+    let sigmoid_x = sigmoid(x);
     sigmoid_x * (1. - sigmoid_x)
 }
 
@@ -13,7 +13,7 @@ pub fn tanh(x : f64) -> f64 {
 }
 
 pub fn tanh_derivative(x : f64) -> f64 {
-    let tanh_x = NN::tanh(x);
+    let tanh_x = tanh(x);
     1. - tanh_x * tanh_x
 }
 
@@ -38,7 +38,7 @@ pub fn softmax(x : f64) -> f64 {
 }
 
 pub fn softmax_derivative(x : f64) -> f64 {
-    let softmax_x = NN::softmax(x);
+    let softmax_x = softmax(x);
     softmax_x * (1. - softmax_x)
 }
 
@@ -47,7 +47,7 @@ pub fn softplus(x : f64) -> f64 {
 }
 
 pub fn softplus_derivative(x : f64) -> f64 {
-    let softplus_x = NN::softplus(x);
+    let softplus_x = softplus(x);
     softplus_x * (1. - softplus_x)
 }
 
@@ -56,7 +56,7 @@ pub fn softsign(x : f64) -> f64 {
 }
 
 pub fn softsign_derivative(x : f64) -> f64 {
-    let softsign_x = NN::softsign(x);
+    let softsign_x = softsign(x);
     softsign_x * (1. - softsign_x)
 }
 
@@ -85,7 +85,7 @@ pub fn exponential(x : f64) -> f64 {
 }
 
 pub fn exponential_derivative(x : f64) -> f64 {
-    let exponential_x = NN::exponential(x);
+    let exponential_x = exponential(x);
     exponential_x * (1. - exponential_x)
 }
 

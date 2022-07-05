@@ -6,7 +6,14 @@ extern crate nalgebra as na;
 use rand::Rng;
 use na::{DMatrix, Hessenberg, Matrix4};
 
-pub mod nn;
+mod fact;
+mod nnlayer;
+mod nn;
+//pub mod nn;
+//
+//mod fact;
+//mod nnlayer;
+//mod nn;
 
 
 type VecVec64 = Vec<Vec<Option<f64>>>;
@@ -174,7 +181,10 @@ fn main() -> Result<(), Error> {
     let mut delta2 = na::DMatrix::from_element(size_l2, 1, 0.);
     let mut deltao = na::DMatrix::from_element(size_lo, 1, 0.);
 
-    let mut nna = nn::NN::new(vec![size_li, size_l1, size_l2, size_lo], 0.01, false);
+    let mut nna = nn::NN::new(vec![           size_li,           size_l1,           size_l2,              size_lo],
+                              vec!["relu".to_string(),"relu".to_string(),"relu".to_string(),"sigmoid".to_string()], 
+                                                                                                             0.005, 
+                                                                                                             false);
 
     println!("Learning rate {}", nna.get_learning_rate());
 

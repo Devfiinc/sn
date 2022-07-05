@@ -1,16 +1,16 @@
-use ndarray::*;
+use crate::nnlayer;
 
+
+use ndarray::*;
 extern crate nalgebra as na;
 use rand::Rng;
 use na::{DMatrix, Hessenberg, Matrix4};
-
-pub mod fact;
 
 pub struct NN {
     _topology : Vec<usize>,
     _activation_functions : Vec<String>,
     _learning_rate : f64,
-    _model : Vector<NNLayer>,
+    _model : Vec<nnlayer::NNLayer>,
     _debug : bool
 }
 
@@ -18,15 +18,16 @@ impl NN {
     // Construct NN
     pub fn new(topology : Vec<usize>, activation_functions : Vec<String>, learning_rate : f64, debug : bool) -> NN{
         let mut nn = NN {
-            _topology : topology,
+            _topology : topology.clone(),
             _activation_functions : activation_functions.clone(),
             _learning_rate : learning_rate,
-            _model : vec![]
+            _model : vec![],
             _debug : debug
         };
 
         for i in 0..topology.len() - 1 {
-            nn._model.push(nnlayer::new(topology[i]+1, topology[i+1],act_funcs[i], learning_rate));            
+            let fact = activation_functions[i].clone();
+            nn._model.push(nnlayer::NNLayer::new(topology[i] + 1, topology[i+1], fact, learning_rate, debug));            
         }
 
         return nn;
@@ -36,11 +37,11 @@ impl NN {
 
     // Forward propagation
     pub fn forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-        let mut vals = na::DMatrix::from_element(input_size + 1, 1, 0.);
+        let mut vals = na::DMatrix::from_element(input.len() + 1, 1, 0.);
         vals = input.clone();
 
-        for x in self._model {
-            vals = x.forward(vals.clone());
+        for i in 0..self._model.len() {
+            vals = self._model[i].forward(vals.clone());
         }
 
         return vals;
@@ -53,7 +54,7 @@ impl NN {
         let mut delta = na::DMatrix::from_element(actions.nrows(), 1, 0.);
         delta = actions.clone() - experimentals.clone();
 
-        for i in 0..self.._model.len() - 1 {
+        for i in 0..self._model.len() - 1 {
             delta = self._model[i].backward(delta.clone());
         }
     }
@@ -62,8 +63,8 @@ impl NN {
 
     // Update time
     pub fn update_time(&mut self) {
-        for x in self._model {
-            x.update_time();
+        for i in 0..self._model.len() {
+            self._model[i].update_time();
         }
     }
 
