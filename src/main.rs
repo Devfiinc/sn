@@ -189,16 +189,16 @@ fn main() -> Result<(), Error> {
         println!("wi1 {}", wi1[(0,0)]);
 
         l1 = &li.transpose() * &wi1;
-        a1 = l1.map(|x| nn::NN::sigmoid(x));
+        a1 = l1.map(|x| fact::sigmoid(x));
 
         println!("l1 {}", l1[(0,0)]);
         println!("a1 {}", a1[(0,0)]);
 
         l2 = l1 * &w12;
-        a2 = l2.map(|x| nn::NN::sigmoid(x));
+        a2 = l2.map(|x| fact::sigmoid(x));
 
         lo = l2 * &w2o;
-        ao = lo.map(|x| nn::NN::softmax(x));
+        ao = lo.map(|x| fact::softmax(x));
         
         let y : i64 = y_train_1[idx].unwrap() as i64;
         let mut ly = na::DMatrix::from_element(size_lo, 1, 0.);
@@ -207,10 +207,10 @@ fn main() -> Result<(), Error> {
 
         deltao = ao - ly.transpose();
         delta2 = &w2o * deltao.transpose();
-        delta2 = delta2.component_mul(&a2.transpose().map(|x| nn::NN::softmax_derivative(x)));
+        delta2 = delta2.component_mul(&a2.transpose().map(|x| fact::softmax_derivative(x)));
 
         delta1 = &w12.transpose() * &delta2;
-        delta1 = delta1.component_mul(&a1.transpose().map(|x| nn::NN::sigmoid_derivative(x)));
+        delta1 = delta1.component_mul(&a1.transpose().map(|x| fact::sigmoid_derivative(x)));
 
         w2o = w2o.clone() - &(deltao.transpose() * &a2 * learning_rate).transpose();
         w12 = w12.clone() - &(delta2 * &a1 * learning_rate).transpose();
@@ -233,13 +233,13 @@ fn main() -> Result<(), Error> {
         li = na::DMatrix::<f64>::from_vec(size_li, 1, x.iter().map(|x| x.unwrap()).collect());
 
         l1 = li.transpose() * &wi1;
-        a1 = l1.map(|x| nn::NN::sigmoid(x));
+        a1 = l1.map(|x| fact::sigmoid(x));
 
         l2 = l1 * &w12;
-        a2 = l2.map(|x| nn::NN::sigmoid(x));
+        a2 = l2.map(|x| fact::sigmoid(x));
 
         lo = l2 * &w2o;
-        ao = lo.map(|x| nn::NN::softmax(x));
+        ao = lo.map(|x| fact::softmax(x));
 
         let mut max_idx = 0;
         let mut max_val = 0.;

@@ -93,10 +93,10 @@ impl NNLayer {
 
 
     pub fn update_weights(&mut self, gradient : na::DMatrix::<f64>) {
-        let m_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
-        let v_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
-        let m_temp_hat = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
-        let v_temp_hat = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
+        let mut m_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
+        let mut v_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
+        let mut m_vec_hat = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
+        let mut v_vec_hat = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
 
         m_temp = self._m.clone();
         v_temp = self._v.clone();
@@ -116,7 +116,7 @@ impl NNLayer {
         m_vec_hat = m_temp / (1.0 - self._beta_1.powf(self._time + 0.1));
         v_vec_hat = v_temp / (1.0 - self._beta_2.powf(self._time + 0.1));
 
-        let weights_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
+        let mut weights_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
         
         for i in 0..self._weights.nrows() {
             for j in 0..self._weights.ncols() {
@@ -129,10 +129,60 @@ impl NNLayer {
     }
 
 
-    pub fn backward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+    pub fn backward(&mut self, gradient_from_above : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+        let mut adjusted_mul = na::DMatrix::from_element(gradient_from_above.nrows(), 1, 0.);
+        adjusted_mul = gradient_from_above.clone();
+
+        let mut qvalues_temp = na::DMatrix::from_element(self._qvaluesu.nrows(), 1, 0.);
+        qvalues_temp = self._qvaluesu.clone();
 
 
+        if _f_act == String::from("relu") {
+            self._qvalues = self._qvalues.map(|x| fact::relu_derivative(x));
+        }
+        else if _f_act == String::from("sigmoid") {
+            self._qvalues = self._qvalues.map(|x| fact::sigmoid_derivative(x));
+        }
+        else if _f_act == String::from("tanh") {
+            self._qvalues = self._qvalues.map(|x| fact::tanh_derivative(x));
+        }
+        else {
+            self._qvalues = self._qvalues.map(|x| fact::linear_derivative(x));
+        }
+
+        for i in 0..adjusted_mul.nrows() {
+            adjusted_mul[(i,0)] = qvalues_temp[(i,0)] * gradient_from_above[(i,0)];
+        }
+
+        let mut delta_i = na::DMatrix::from_element(self._input.nrows() - 1, 1, 0.);
+        let mut delta_i_tmp = na::DMatrix::from_element(self._input.nrows(), 1, 0.);
+
+        delta_i_tmp = adjusted_mul * self._weights.transpose();
+        for i in 0..delta_i.nrows() {
+            delta_i[(i,0)] = delta_i_tmp[(i,0)];
+        }
+        
+        let mut D_i = na::DMatrix::from_element(self._input.nrows(), adjusted_mul.nrows(), 0.);
+        for i in 0..self._input.nrows() {
+            for j in 0..adjusted_mul.nrows() {
+                D_i[(i,j)] = self._input[(i,0)] * adjusted_mul[(j,0)];
+            }
+        }
+
+        self.update_weights(D_i.clone());
+
+        return delta_i;
     }
+
+
+
+
+
+
+
+
+
+
 
 
     pub fn set_weights(&mut self, input : na::DMatrix::<f64>) {
@@ -148,14 +198,5 @@ impl NNLayer {
     pub fn update_time(&mut self) {
         self._time = self._time + 1;
     }
-
-
-
-
-
-
-
-
-
 
 }
