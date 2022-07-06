@@ -131,12 +131,18 @@ fn main() -> Result<(), Error> {
     let mut nna = nn::NN::new(vec![           size_li,           size_l1,           size_l2,              size_lo],
                               vec!["relu".to_string(),"relu".to_string(),"relu".to_string(),"softmax".to_string()], 
                               learning_rate, 
-                              true,
                               false);
 
+    nna.enable_dp(true, 0.01, 1.0);
+
+    nna.train(x_train, y_train, 1, 1, 1, 1);
+    nna.test(x_test, y_test);
 
 
 
+
+
+/*
     for i in 0..x_train.len() {
         if (i % 1000) == 0 {
             println!("Training = {:.2} %", 100.0 * i as f64 / x_train.len() as f64);
@@ -177,6 +183,7 @@ fn main() -> Result<(), Error> {
     }
 
     println!("Accuracy: {} / {} = {}%\n", correct, x_test.len(), (correct as f64 / x_test.len() as f64) * 100.);
+*/
 
     Ok(())
 }   

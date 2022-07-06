@@ -4,17 +4,27 @@ use rand::Rng;
 use na::{DMatrix, Hessenberg, Matrix4};
 
 use crate::fact;
+use crate::dp;
 
 pub struct NNLayer {
+    // Layer definition
     _input_size : usize,
     _output_size : usize,
     _learning_rate : f64,
     _f_act : String,
 
+    // Layer weights and values
     _weights : na::DMatrix::<f64>,
     _qvalues : na::DMatrix::<f64>,
     _qvaluesu : na::DMatrix::<f64>, 
     _input : na::DMatrix::<f64>,
+
+    // Differential privacy
+    _dp : bool,
+    _epsilon : f64,
+    _noise_scale : f64,
+    _gradient_norm_bound : f64,
+    _ms : dp::MeasurementDMatrix,
 
     //Adam Optimizer
     _m : na::DMatrix::<f64>, 
@@ -23,8 +33,6 @@ pub struct NNLayer {
     _beta_2 : f64,
     _time : f64,
     _adam_epsilon : f64,
-
-    _dp : bool,
 
     _debug : bool
 }
@@ -38,7 +46,12 @@ impl NNLayer {
             _output_size : output_size,
             _f_act : f_act,
             _learning_rate : learning_rate,
+
             _dp : false,
+            _epsilon : 1.0,
+            _noise_scale : 0.0,
+            _gradient_norm_bound : 0.0,
+            _ms : dp::MeasurementDMatrix::new(0.0),
         
             _weights : na::DMatrix::from_fn(input_size, output_size, |r,c| {rand::random::<f64>() - 0.5}),
             _qvalues : na::DMatrix::from_element(1, input_size + 1, 0.),
@@ -58,6 +71,22 @@ impl NNLayer {
 
         return nnlayer;
     }
+
+
+    pub fn enable_dp(&mut self, dp : bool, epsilon : f64, noise_scale : f64, gradient_norm_bound : f64) {
+        self._dp = dp;
+        self._epsilon = epsilon;
+        self._noise_scale = noise_scale;
+        self._gradient_norm_bound = gradient_norm_bound;
+
+        self._ms.initialize(epsilon, noise_scale, gradient_norm_bound);
+    }
+
+
+    pub fn disable_dp(&mut self) {
+        self._dp = false;
+    }
+
 
     pub fn debug_mode(&mut self, debug : bool) {
         self._debug = debug;
@@ -106,12 +135,19 @@ impl NNLayer {
         m_temp = self._m.clone();
         v_temp = self._v.clone();
 
-        m_temp = self._beta_1 * m_temp + (1.0 - self._beta_1) * gradient.clone();
+        let mut gradient1 = gradient.clone();
+
+        // Add privacy if dp mode is enabled
+        if self._dp {
+            gradient1 = self._ms.invoke(gradient.clone());
+        }
+
+        m_temp = self._beta_1 * m_temp + (1.0 - self._beta_1) * gradient1.clone();
 
         let mut gradient2 = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
-        for i in 0..gradient.nrows() {
-            for j in 0..gradient.ncols() {
-                gradient2[(i,j)] = gradient[(i,j)] * gradient[(i,j)];
+        for i in 0..gradient1.nrows() {
+            for j in 0..gradient1.ncols() {
+                gradient2[(i,j)] = gradient1[(i,j)] * gradient1[(i,j)];
             }
         }
 
