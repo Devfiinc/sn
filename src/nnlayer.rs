@@ -24,6 +24,8 @@ pub struct NNLayer {
     _time : f64,
     _adam_epsilon : f64,
 
+    _dp : bool,
+
     _debug : bool
 }
 
@@ -34,8 +36,9 @@ impl NNLayer {
         let mut nnlayer = NNLayer {
             _input_size : input_size,
             _output_size : output_size,
-            _learning_rate : learning_rate,
             _f_act : f_act,
+            _learning_rate : learning_rate,
+            _dp : false,
         
             _weights : na::DMatrix::from_fn(input_size, output_size, |r,c| {rand::random::<f64>() - 0.5}),
             _qvalues : na::DMatrix::from_element(1, input_size + 1, 0.),

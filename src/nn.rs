@@ -11,6 +11,9 @@ pub struct NN {
     _activation_functions : Vec<String>,
     _learning_rate : f64,
     _model : Vec<nnlayer::NNLayer>,
+    _dp : bool,
+    _noise_scale : f64,
+    _gradient_norm_bound : f64,
     _debug : bool
 }
 
@@ -22,6 +25,9 @@ impl NN {
             _activation_functions : activation_functions.clone(),
             _learning_rate : learning_rate,
             _model : vec![],
+            _dp : false,
+            _noise_scale : 0.0,
+            _gradient_norm_bound : 0.0,
             _debug : debug
         };
 
@@ -33,6 +39,17 @@ impl NN {
         return nn;
     }
 
+
+    pub fn enable_dp(&mut self, dp : bool, noise_scale : f64, gradient_norm_bound : f64) {
+        self._dp = dp;
+        self._noise_scale = noise_scale;
+        self._gradient_norm_bound = gradient_norm_bound;
+    }
+
+
+    pub fn disable_dp(&mut self) {
+        self._dp = false;
+    }
 
 
     // Forward propagation
@@ -52,9 +69,9 @@ impl NN {
 
 
     // Back propagation
-    pub fn backward(&mut self, actions : na::DMatrix::<f64>, experimentals : na::DMatrix::<f64>) {
-        let mut delta = na::DMatrix::from_element(actions.nrows(), 1, 0.);
-        delta = actions.clone() - experimentals.clone();
+    pub fn backward(&mut self, output : na::DMatrix::<f64>, ytrain : na::DMatrix::<f64>) {
+        let mut delta = na::DMatrix::from_element(output.nrows(), 1, 0.);
+        delta = output.clone() - ytrain.clone();
 
         //println!("Vals init {} x {}", delta.nrows(), delta.ncols());
         //for i in (0..self._model.len() - 1).rev() {

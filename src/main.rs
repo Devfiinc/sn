@@ -7,6 +7,7 @@ use rand::Rng;
 use na::{DMatrix, Hessenberg, Matrix4};
 
 mod fact;
+mod dp;
 mod nnlayer;
 mod nn;
 //pub mod nn;
@@ -118,8 +119,8 @@ fn main() -> Result<(), Error> {
 
 
     let size_li = x_train[0].len();
-    let size_l1 = 200;
-    let size_l2 = 200;
+    let size_l1 = 50;
+    let size_l2 = 25;
     let size_lo = 10;
 
     let learning_rate = 0.005;
@@ -127,9 +128,10 @@ fn main() -> Result<(), Error> {
     let mut li = na::DMatrix::from_element(size_l1, 1, 0.);
     let mut lo = na::DMatrix::from_element(size_lo, 1, 0.);
 
-    let mut nna = nn::NN::new(vec![           size_li,           size_l1,size_l1,           size_l2,              size_lo],
-                              vec!["relu".to_string(),"relu".to_string(),"relu".to_string(),"relu".to_string(),"softmax".to_string()], 
+    let mut nna = nn::NN::new(vec![           size_li,           size_l1,           size_l2,              size_lo],
+                              vec!["relu".to_string(),"relu".to_string(),"relu".to_string(),"softmax".to_string()], 
                               learning_rate, 
+                              true,
                               false);
 
 
@@ -143,19 +145,10 @@ fn main() -> Result<(), Error> {
         li = na::DMatrix::<f64>::from_vec(size_li, 1, x_train[i].iter().map(|x| x.unwrap()).collect());
         lo = nna.forward(li.clone());
 
-        let mut maxid : usize = 0;
-        let mut maxval : f64 = 0.0;
-        for j in 0..lo.ncols(){
-            if lo[(0,j)] > maxval {
-                maxid = j;
-                maxval = lo[(0,j)];
-            }
-        }
+        let mut y = na::DMatrix::from_element(1, size_lo, 0.);
+        y[(0, y_train[i].unwrap() as usize)] = 1.0;
 
-        let mut vy = na::DMatrix::from_element(1, size_lo, 0.);
-        let y = y_train[i].unwrap();
-        vy[(0,y as usize)] = 1.;
-        nna.backward(lo.clone(), vy.clone());
+        nna.backward(lo.clone(), y.clone());
     }
 
 
