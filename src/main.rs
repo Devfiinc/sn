@@ -58,6 +58,74 @@ fn main() -> Result<(), Error> {
 
     let mut sn : VecVec64 = vec![];
 
+    for row in conn.query("SELECT * from iris", &[])? {
+
+        sn.push(vec![row.get(0),
+                     row.get(1),
+                     row.get(2),
+                     row.get(3),
+                     row.get(4)]);
+    }
+    
+    
+    // Shuffle input
+    sn.shuffle(&mut thread_rng());
+
+
+    // Split dataset into train, cross validation and test
+    let mut x_train : VecVec64 = vec![];
+    let mut y_train : Vec<Option<f64>> = vec![];
+    let mut x_cv : VecVec64 = vec![];
+    let mut y_cv : Vec<Option<f64>> = vec![];
+    let mut x_test : VecVec64 = vec![];
+    let mut y_test : Vec<Option<f64>> = vec![];
+
+    let mut size_train = 0.60;
+    let mut size_cv = 0.20;
+    let mut size_test = 0.20;
+
+    let mut i : i64 = 0;
+    let split_train : i64 = (sn.len() as f64 * size_train) as i64;
+    let split_cv : i64 = (sn.len() as f64 * (size_train + size_cv)) as i64;
+    for n in sn {
+        if i < split_train {
+            x_train.push(n[0..20].to_vec());
+            y_train.push(n[20].clone());
+        } else if i < split_cv {
+            x_cv.push(n[0..20].to_vec());
+            y_cv.push(n[20].clone());
+        } else {
+            x_test.push(n[0..20].to_vec());
+            y_test.push(n[20].clone());
+        }
+        i = i + 1;
+    }
+
+
+
+
+
+
+
+    let mut lr = lr::LogisticRegression::new(1000, 0.1, 0.01, false);
+
+    lr.fit(x_train.clone(), y_train.clone());
+
+    lr.test(x_train.clone(), y_train.clone());
+
+
+
+
+    /*
+
+
+    
+
+    let url = "postgresql://postgres:postgres@localhost:5432/postgres";
+    let mut conn = Client::connect(url, NoTls).unwrap();
+
+    let mut sn : VecVec64 = vec![];
+
     for row in conn.query("SELECT * from sn", &[])? {
 
         sn.push(vec![row.get(0),
@@ -117,22 +185,6 @@ fn main() -> Result<(), Error> {
         i = i + 1;
     }
 
-
-
-
-
-
-
-    let mut lr = lr::LogisticRegression::new(1000000, 0.1, 0.01, false);
-
-    lr.fit(x_train.clone(), y_train.clone());
-
-    lr.test(x_train.clone(), y_train.clone());
-
-
-
-
-    /*
 
     let size_li = x_train[0].len();
     let size_l1 = 50;

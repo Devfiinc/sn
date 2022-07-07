@@ -118,7 +118,8 @@ impl NNLayer {
             self._qvalues = self._qvalues.map(|x| fact::tanh(x));
         }
         else if self._f_act == String::from("softmax") {
-            self._qvalues = self._qvalues.map(|x| fact::softmax(x));
+            self._qvalues = fact::softmax(self._qvalues.clone());
+            //self._qvalues = self._qvalues.map(|x| fact::softmax(x));
         }
         else {
             self._qvalues = self._qvalues.map(|x| fact::linear(x));

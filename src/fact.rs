@@ -1,4 +1,8 @@
 
+use na::{DMatrix, Hessenberg, Matrix4};
+
+
+
 pub fn sigmoid(x : f64) -> f64 {
     1. / (1. + (-x).exp())
 }
@@ -33,13 +37,55 @@ pub fn relu_derivative(x : f64) -> f64 {
     }
 }
 
-pub fn softmax(x : f64) -> f64 {
-    x.exp()
+pub fn softmax(x : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+    let mut sumx : f64 = 0.0;
+    let mut out = x.clone();
+
+    for i in 0..x.nrows() {
+        for j in 0..x.ncols() {
+            sumx = sumx + x[(i,j)].exp();
+        }
+    }
+
+    for i in 0..x.nrows() {
+        for j in 0..x.ncols() {
+            out[(i,j)] = x[(i,j)].exp() / sumx;
+        }
+    }
+
+    return out;
 }
 
-pub fn softmax_derivative(x : f64) -> f64 {
-    let softmax_x = softmax(x);
-    softmax_x * (1. - softmax_x)
+pub fn softmax_derivative(x : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+    
+    let mut out = x.clone();
+
+
+    let mut denom : f64 = 0.0;
+    for i in 0..x.nrows() {
+        for j in 0..x.ncols() {
+            denom = denom + x[(i,j)].exp();
+        }
+    }
+
+    for i in 0..x.nrows() {
+        for j in 0..x.ncols() {
+            let comm : f64 = x[(i,j)].exp() / (denom**2);
+            let mut factor : f64 = 0.0;
+
+            for k in 0..x.nrows() {
+                for l in 0..x.ncols() {
+                    if k == i && l == j {
+                        continue;
+                    } else {
+                        factor = factor + x[(k,l)].exp();
+                    }
+                }
+            }
+
+            out[(i,j)] = comm * factor;
+        }
+    }
 }
 
 pub fn softplus(x : f64) -> f64 {
