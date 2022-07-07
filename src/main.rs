@@ -51,6 +51,9 @@ use rand::seq::SliceRandom;
 fn main() -> Result<(), Error> {
 
 
+    /*
+    let epochs = 1000;
+    let batch = 50;
     let nfeat = 4;
     let nclass = 3;
 
@@ -106,20 +109,19 @@ fn main() -> Result<(), Error> {
 
 
 
-    let mut lr = lr::LogisticRegression::new(1000, 60, 4, 3, 0.1, 0.01, false);
-
+    let mut lr = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.1, 0.01, false);
     lr.fit(x_train.clone(), y_train.clone());
-
     lr.test(x_train.clone(), y_train.clone());
+    */
+
+
 
     
-
-
-
     
-    /*
+    let epochs = 100;
+    let batch = 1000;
     let nfeat = 20;
-    let nclass = 1;
+    let nclass = 10;
     
 
     let url = "postgresql://postgres:postgres@localhost:5432/postgres";
@@ -187,12 +189,22 @@ fn main() -> Result<(), Error> {
     }
 
 
-    let mut lr = lr::LogisticRegression::new(1000, 4, 3, 0.1, 0.01, false);
+    let mut lr = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.1, 0.01, false);
 
     lr.fit(x_train.clone(), y_train.clone());
 
     lr.test(x_train.clone(), y_train.clone());
-    */
+    
+
+
+    
+
+
+
+
+
+
+
 
     /*
     let size_li = x_train[0].len();

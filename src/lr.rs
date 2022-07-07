@@ -153,18 +153,12 @@ impl LogisticRegression {
         let mut batch_idx : usize = 0;
         let mut batch_size : usize = self._batch_size;
 
-        println!("batch_size = {}", batch_size);
-
 
         for i in 0..self._max_iter {
-
-            //println!("iter {}", i);
             batch_idx = 0;
             batch_size = self._batch_size;
 
             while batch_idx + batch_size < x_train.len() {
-                //println!(" batch idx {}", batch_idx);
-                //println!("Batch size = {}", batch_size);
 
                 let mut x_batch = na::DMatrix::from_element(batch_size, x_train[0].len(), 0.);
                 let mut y_batch = na::DMatrix::from_element(batch_size, self._nclass, 0.);
@@ -180,12 +174,11 @@ impl LogisticRegression {
 
                 batch_idx = batch_idx + batch_size;
 
-
                 let grad = self.gradient(x_batch.clone(), y_batch.clone());
 
                 self._w = self._w.clone() - self._eta * grad;
 
-                let loss = self.loss(li.clone(),lo.clone());
+                let loss = self.loss(x_batch.clone(),y_batch.clone());
 
                 println!("Loss {:?} = {:.8}", i, loss);
             }
@@ -214,7 +207,7 @@ impl LogisticRegression {
 
                 self._w = self._w.clone() - self._eta * grad;
 
-                let loss = self.loss(li.clone(),lo.clone());
+                let loss = self.loss(x_batch.clone(),y_batch.clone());
 
                 println!("Loss {:?} = {:.8}", i, loss);
             }
