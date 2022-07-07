@@ -3,10 +3,10 @@ use opendp::trans::{make_split_lines, make_cast_default, make_clamp, make_bounde
 use opendp::comb::{make_chain_tt, make_chain_mt};
 use opendp::meas::*;
 
-use opendp::core::*;
-use opendp::dom::*;
-use opendp::dist::*;
-use opendp::meas::*;
+//use opendp::core::*;
+//use opendp::dom::*;
+//use opendp::dist::*;
+//use opendp::meas::*;
 
 
 
@@ -18,12 +18,12 @@ use rand::Rng;
 type VecVec64 = Vec<Vec<Option<f64>>>;
 
 
-use opendp::core::{Domain, Function, Measurement, PrivacyRelation, SensitivityMetric};
-use opendp::dist::{AbsoluteDistance, L2Distance, SmoothedMaxDivergence};
-use opendp::dom::{AllDomain, VectorDomain};
-use opendp::traits::{CheckNull, TotalOrd};
-use opendp::error::*;
-use opendp::samplers::SampleGaussian;
+//use opendp::core::{Domain, Function, Measurement, PrivacyRelation, SensitivityMetric};
+//use opendp::dist::{AbsoluteDistance, L2Distance, SmoothedMaxDivergence};
+//use opendp::dom::{AllDomain, VectorDomain};
+//use opendp::traits::{CheckNull, TotalOrd};
+//use opendp::error::*;
+//use opendp::samplers::SampleGaussian;
 
 
 use probability::*;

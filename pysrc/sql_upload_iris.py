@@ -52,7 +52,7 @@ def main(argv):
     query += "v2 FLOAT,"
     query += "v3 FLOAT,"
     query += "v4 FLOAT,"
-    query += "y INT"
+    query += "y FLOAT"
     query += ")"
 
     # Create table
@@ -75,7 +75,7 @@ def main(argv):
         query += str(X[i][1]) + ", "
         query += str(X[i][2]) + ", "
         query += str(X[i][3]) + ", "
-        query += str(Y[i])
+        query += str(float(Y[i]))
         query += ")"
 
         cur.execute(query)
