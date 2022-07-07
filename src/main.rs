@@ -8,6 +8,7 @@ use na::{DMatrix, Hessenberg, Matrix4};
 
 mod fact;
 mod dp;
+mod lr;
 mod nnlayer;
 mod nn;
 //pub mod nn;
@@ -118,6 +119,21 @@ fn main() -> Result<(), Error> {
 
 
 
+
+
+
+
+    let mut lr = lr::LogisticRegression::new(1000000, 0.1, 0.01, false);
+
+    lr.fit(x_train.clone(), y_train.clone());
+
+    lr.test(x_train.clone(), y_train.clone());
+
+
+
+
+    /*
+
     let size_li = x_train[0].len();
     let size_l1 = 50;
     let size_l2 = 25;
@@ -138,52 +154,8 @@ fn main() -> Result<(), Error> {
     nna.train(x_train, y_train, 1, 1, 1, 1);
     nna.test(x_test, y_test);
 
+        */
 
-
-
-
-/*
-    for i in 0..x_train.len() {
-        if (i % 1000) == 0 {
-            println!("Training = {:.2} %", 100.0 * i as f64 / x_train.len() as f64);
-        }
-
-        li = na::DMatrix::<f64>::from_vec(size_li, 1, x_train[i].iter().map(|x| x.unwrap()).collect());
-        lo = nna.forward(li.clone());
-
-        let mut y = na::DMatrix::from_element(1, size_lo, 0.);
-        y[(0, y_train[i].unwrap() as usize)] = 1.0;
-
-        nna.backward(lo.clone(), y.clone());
-    }
-
-
-    let mut correct : i64 = 0;
-
-    for i in 0..x_test.len() {
-        if (i % 100) == 0 {
-            println!("Testing = {:.2} %", 100.0 * i as f64 / x_test.len() as f64);
-        }
-
-        li = na::DMatrix::<f64>::from_vec(size_li, 1, x_test[i].iter().map(|x| x.unwrap()).collect());
-        lo = nna.forward(li.clone());
-
-        let mut maxid : usize = 0;
-        let mut maxval : f64 = 0.0;
-        for j in 0..lo.ncols(){
-            if lo[(0,j)] > maxval {
-                maxid = j;
-                maxval = lo[(0,j)];
-            }
-        }
-
-        if maxid == y_test[i].unwrap() as usize {
-            correct = correct + 1;
-        }
-    }
-
-    println!("Accuracy: {} / {} = {}%\n", correct, x_test.len(), (correct as f64 / x_test.len() as f64) * 100.);
-*/
 
     Ok(())
 }   
