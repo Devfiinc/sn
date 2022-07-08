@@ -120,7 +120,7 @@ fn main() -> Result<(), Error> {
     //let _data_norm = 7.89;
 
     let _epsilon = 1.0;
-    let _noise_scale = 0.001;
+    let _noise_scale = 1.0;
     let _data_norm = 1000.0;
 
     let epochs = 5;
