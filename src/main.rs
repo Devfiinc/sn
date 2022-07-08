@@ -115,12 +115,18 @@ fn main() -> Result<(), Error> {
 
 
 
-    let _epsilon = 3.0;
-    let _noise_scale = 0.01;
-    let _data_norm = 7.89;
+    //let _epsilon = 3.0;
+    //let _noise_scale = 0.01;
+    //let _data_norm = 7.89;
+
+    let _epsilon = 1.0;
+    let _noise_scale = 0.001;
+    let _data_norm = 1000.0;
 
     let epochs = 5;
     let batch = 1000;
+    let epochs_dp = 5;
+    let batch_dp = 1000;
     let nfeat = 20;
     let nclass = 10;
 
