@@ -25,6 +25,10 @@ fn main() -> Result<(), Error> {
 
 
     /*
+    let _epsilon = 3.0;
+    let _noise_scale = 0.01;
+    let _data_norm = 7.89;
+
     let epochs = 1000;
     let batch = 50;
     let nfeat = 4;
@@ -81,7 +85,21 @@ fn main() -> Result<(), Error> {
 
 
 
+    let mut lr = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.01, 0.001, false);
 
+    lr.fit(x_train.clone(), y_train.clone(), epochs as usize, batch as usize);
+    lr.test(x_train.clone(), y_train.clone());
+    let loss1 = lr.get_loss();
+
+    lr.reset();
+
+    lr.enable_dp(true, _epsilon, _noise_scale, _data_norm);
+    lr.fit(x_train.clone(), y_train.clone(), epochs_dp as usize, batch_dp as usize);
+    lr.test(x_train.clone(), y_train.clone());
+    let loss2 = lr.get_loss();
+    */
+
+    /*
     let mut lr = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.1, 0.01, false);
     lr.enable_dp(true, 1.0, 0.01, 1.0);
 
@@ -91,13 +109,20 @@ fn main() -> Result<(), Error> {
 
 
 
+
     
-    
+
+
+
+
+    let _epsilon = 3.0;
+    let _noise_scale = 0.01;
+    let _data_norm = 7.89;
+
     let epochs = 5;
     let batch = 1000;
     let nfeat = 20;
     let nclass = 10;
-    
 
     let url = "postgresql://postgres:postgres@localhost:5432/postgres";
     let mut conn = Client::connect(url, NoTls).unwrap();
@@ -129,10 +154,8 @@ fn main() -> Result<(), Error> {
                      row.get(20)]);
     }
     
-    
     // Shuffle input
     sn.shuffle(&mut thread_rng());
-
 
     // Split dataset into train, cross validation and test
     let mut x_train : VecVec64 = vec![];
@@ -163,30 +186,24 @@ fn main() -> Result<(), Error> {
         i = i + 1;
     }
 
-
     let mut lr = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.01, 0.001, false);
 
-    //lr.fit(x_train.clone(), y_train.clone());
-    //lr.test(x_train.clone(), y_train.clone());
+    lr.fit(x_train.clone(), y_train.clone(), epochs as usize, batch as usize);
+    lr.test(x_train.clone(), y_train.clone());
+    let loss1 = lr.get_loss();
 
     lr.reset();
 
-    lr.enable_dp(true, 1.0, 0.01, 0.01);
-    lr.fit(x_train.clone(), y_train.clone());
+    lr.enable_dp(true, _epsilon, _noise_scale, _data_norm);
+    lr.fit(x_train.clone(), y_train.clone(), epochs_dp as usize, batch_dp as usize);
     lr.test(x_train.clone(), y_train.clone());
+    let loss2 = lr.get_loss();
+
     
-
-
-    
-
-
-
 
 
 
     /*
-
-    
     let size_li = x_train[0].len();
     let size_l1 = 50;
     let size_l2 = 25;
@@ -203,7 +220,6 @@ fn main() -> Result<(), Error> {
 
     nna.train(x_train, y_train, 1, 1, 1, 1);
     nna.test(x_test, y_test);
-
     */
 
 

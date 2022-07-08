@@ -4,7 +4,6 @@ use crate::fact;
 use crate::dp;
 
 
-
 pub struct LogisticRegression {
     _max_iter : usize,
     _batch_size : usize,
@@ -25,10 +24,7 @@ pub struct LogisticRegression {
 
     // Debug
     _debug : bool
-
-
 }
-
 
 
 impl LogisticRegression {
@@ -53,8 +49,6 @@ impl LogisticRegression {
             _ms : dp::MeasurementDMatrix::new(0.0),
 
             _debug : debug,
-
-
         };
 
         return lr;
@@ -71,6 +65,7 @@ impl LogisticRegression {
         println!();
     }
 
+
     pub fn enable_dp(&mut self, dp : bool, epsilon : f64, noise_scale : f64, gradient_norm_bound : f64) {
         self._dp = dp;
         self._epsilon = epsilon;
@@ -78,6 +73,11 @@ impl LogisticRegression {
         self._gradient_norm_bound = gradient_norm_bound;
 
         self._ms.initialize(epsilon, noise_scale, gradient_norm_bound);
+    }
+
+
+    pub fn get_loss(&self) -> f64 {
+        return self._loss;
     }
 
 
@@ -89,7 +89,7 @@ impl LogisticRegression {
         return trace;
     }
 
-    
+
     pub fn loss(&mut self, x : na::DMatrix::<f64>, y : na::DMatrix::<f64>) -> f64 {
         let z = - x.clone() * self._w.clone();
         let m = x.nrows() as f64;
@@ -143,12 +143,13 @@ impl LogisticRegression {
     }
 
 
-    pub fn fit(&mut self, x_train : Vec<Vec<Option<f64>>>, y_train : Vec<Option<f64>>) {
+    //pub fn fit(&mut self, x_train : Vec<Vec<Option<f64>>>, y_train : Vec<Option<f64>>) {
+    pub fn fit(&mut self, x_train : Vec<Vec<Option<f64>>>, y_train : Vec<Option<f64>>, epochs1 : usize, batch1 : usize) {
 
         if self._dp {
             println!("Differential privacy enabled");
         }
-        
+
         let mut li = na::DMatrix::from_element(x_train.len(), x_train[0].len(), 0.);
         //println!("fit");
         for i in 0..x_train.len() {
@@ -170,9 +171,9 @@ impl LogisticRegression {
         let mut batch_idx : usize;
         let mut batch_size : usize;
 
-        for i in 0..self._max_iter {
+        for i in 0..epochs1 {
             batch_idx = 0;
-            batch_size = self._batch_size;
+            batch_size = batch1;
 
             while batch_idx + batch_size < x_train.len() {
                 let mut x_batch = na::DMatrix::from_element(batch_size, x_train[0].len(), 0.);
@@ -229,7 +230,7 @@ impl LogisticRegression {
             //println!("Loss {:?} = {:.8}", i, loss);
 
 
-            println!("Epoch {} / {} - Loss = {:.8}", i+1, self._max_iter, self._loss);
+            println!("Epoch {} / {} - Loss = {:.8}", i+1, epochs1, self._loss);
         }
 
         println!("Final loss    = {:.8}", self._loss);
