@@ -1,10 +1,8 @@
 use crate::nnlayer;
 
-
-use ndarray::*;
 extern crate nalgebra as na;
-use rand::Rng;
-use na::{DMatrix, Hessenberg, Matrix4};
+
+
 
 pub struct NN {
     // NN definition
@@ -60,8 +58,7 @@ impl NN {
 
     // Forward propagation
     pub fn forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-        let mut vals = na::DMatrix::from_element(1, input.nrows(), 0.);
-        vals = input.transpose().clone();
+        let mut vals = input.transpose().clone();
 
         //println!("Vals init {} x {}", vals.nrows(), vals.ncols());
         for i in 0..self._model.len() {
@@ -76,8 +73,7 @@ impl NN {
 
     // Back propagation
     pub fn backward(&mut self, output : na::DMatrix::<f64>, ytrain : na::DMatrix::<f64>) {
-        let mut delta = na::DMatrix::from_element(output.nrows(), 1, 0.);
-        delta = output.clone() - ytrain.clone();
+        let mut delta = output.clone() - ytrain.clone();
 
         //println!("Vals init {} x {}", delta.nrows(), delta.ncols());
         //for i in (0..self._model.len() - 1).rev() {
@@ -99,32 +95,24 @@ impl NN {
 
 
     // Train
-    pub fn train(&mut self, x_train : Vec<Vec<Option<f64>>>, y_train : Vec<Option<f64>>, num_episodes : i64, max_steps : i64, target_upd : i64, exp_upd : i64) {
+    pub fn train(&mut self, x_train : Vec<Vec<Option<f64>>>, y_train : Vec<Option<f64>>, _num_episodes : i64, _max_steps : i64, _target_upd : i64, _exp_upd : i64) {
         
-        let mut li = na::DMatrix::from_element(self._topology[0], 1, 0.);
-        let mut lo = na::DMatrix::from_element(self._topology[self._topology.len() - 1], 1, 0.);
+        //let mut li = na::DMatrix::from_element(self._topology[0], 1, 0.);
+        //let mut lo = na::DMatrix::from_element(self._topology[self._topology.len() - 1], 1, 0.);
 
         for i in 0..x_train.len() {
             if (i % 1000) == 0 {
                 println!("Training = {:.2} %", 100.0 * i as f64 / x_train.len() as f64);
             }
     
-            li = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_train[i].iter().map(|x| x.unwrap()).collect());
-            lo = self.forward(li.clone());
+            let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_train[i].iter().map(|x| x.unwrap()).collect());
+            let lo : na::DMatrix::<f64> = self.forward(li.clone());
     
             let mut y = na::DMatrix::from_element(1, self._topology[self._topology.len() - 1], 0.);
             y[(0, y_train[i].unwrap() as usize)] = 1.0;
     
             self.backward(lo.clone(), y.clone());
         }
-        
-
-        
-        /*
-        for episode in 0..num_episodes {
-            
-        }
-        */
     }
 
 
@@ -133,16 +121,14 @@ impl NN {
     pub fn test(&mut self, x_test : Vec<Vec<Option<f64>>>, y_test : Vec<Option<f64>>) {
 
         let mut correct : i64 = 0;
-        let mut li = na::DMatrix::from_element(self._topology[0], 1, 0.);
-        let mut lo = na::DMatrix::from_element(self._topology[self._topology.len() - 1], 1, 0.);
 
         for i in 0..x_test.len() {
             if (i % 100) == 0 {
                 println!("Testing = {:.2} %", 100.0 * i as f64 / x_test.len() as f64);
             }
     
-            li = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_test[i].iter().map(|x| x.unwrap()).collect());
-            lo = self.forward(li.clone());
+            let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_test[i].iter().map(|x| x.unwrap()).collect());
+            let lo : na::DMatrix::<f64> = self.forward(li.clone());
     
             let mut maxid : usize = 0;
             let mut maxval : f64 = 0.0;
@@ -181,12 +167,6 @@ impl NN {
         }
 
         return maxid as i64;
-    }
-
-
-
-    pub fn get_learning_rate(&self) -> f64{
-        return self._learning_rate;
     }
 
 

@@ -1,21 +1,13 @@
 
 use postgres::{Client, Error, NoTls};
-use ndarray::*;
 
 extern crate nalgebra as na;
-//use rand::Rng;
-//use na::{DMatrix, Hessenberg, Matrix4};
 
 mod fact;
 mod dp;
 mod lr;
 mod nnlayer;
 mod nn;
-//pub mod nn;
-//
-//mod fact;
-//mod nnlayer;
-//mod nn;
 
 
 type VecVec64 = Vec<Vec<Option<f64>>>;
@@ -24,26 +16,7 @@ type VecVec64 = Vec<Vec<Option<f64>>>;
 use rand::thread_rng;
 use rand::seq::SliceRandom;
 
-//use opendp::*;
-//use opendp::core::*;
-//use opendp::meas::{make_base_geometric};
 
-//use opendp::core::{Domain, Function, Measure, Measurement, Metric, PrivacyRelation};
-//use opendp::dom::AllDomain;
-//use opendp::error::*;
-//use opendp::traits::{CheckNull, InfSub};
-
-
-//use opendp::trans::{make_identity};
-//use opendp::dom::*;//{VectorDomain, AllDomain};
-//use opendp::dist::{SymmetricDistance};
-
-//use opendp::core::{Function, Measurement, PrivacyRelation};
-//use opendp::dist::{IntDistance, L1Distance, SmoothedMaxDivergence};
-//use opendp::dom::{AllDomain, MapDomain};
-//use opendp::error::Fallible;
-//use opendp::samplers::SampleLaplace;
-//use opendp::traits::{CheckNull, InfCast};
 
 
 
@@ -110,6 +83,8 @@ fn main() -> Result<(), Error> {
 
 
     let mut lr = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.1, 0.01, false);
+    lr.enable_dp(true, 1.0, 0.01, 1.0);
+
     lr.fit(x_train.clone(), y_train.clone());
     lr.test(x_train.clone(), y_train.clone());
     */
@@ -118,7 +93,7 @@ fn main() -> Result<(), Error> {
 
     
     
-    let epochs = 100;
+    let epochs = 5;
     let batch = 1000;
     let nfeat = 20;
     let nclass = 10;
@@ -167,13 +142,13 @@ fn main() -> Result<(), Error> {
     let mut x_test : VecVec64 = vec![];
     let mut y_test : Vec<Option<f64>> = vec![];
 
-    let mut size_train = 0.60;
-    let mut size_cv = 0.20;
-    let mut size_test = 0.20;
+    let mut _size_train = 0.60;
+    let mut _size_cv = 0.20;
+    let mut _size_test = 0.20;
 
     let mut i : i64 = 0;
-    let split_train : i64 = (sn.len() as f64 * size_train) as i64;
-    let split_cv : i64 = (sn.len() as f64 * (size_train + size_cv)) as i64;
+    let split_train : i64 = (sn.len() as f64 * _size_train) as i64;
+    let split_cv : i64 = (sn.len() as f64 * (_size_train + _size_cv)) as i64;
     for n in sn {
         if i < split_train {
             x_train.push(n[0..20].to_vec());
@@ -189,10 +164,15 @@ fn main() -> Result<(), Error> {
     }
 
 
-    let mut lr = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.1, 0.01, false);
+    let mut lr = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.01, 0.001, false);
 
+    //lr.fit(x_train.clone(), y_train.clone());
+    //lr.test(x_train.clone(), y_train.clone());
+
+    lr.reset();
+
+    lr.enable_dp(true, 1.0, 0.01, 0.01);
     lr.fit(x_train.clone(), y_train.clone());
-
     lr.test(x_train.clone(), y_train.clone());
     
 
@@ -204,9 +184,9 @@ fn main() -> Result<(), Error> {
 
 
 
-
-
     /*
+
+    
     let size_li = x_train[0].len();
     let size_l1 = 50;
     let size_l2 = 25;

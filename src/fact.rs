@@ -1,8 +1,4 @@
 
-use na::{DMatrix};
-
-
-
 pub fn sigmoid(x : f64) -> f64 {
     1. / (1. + (-x).exp())
 }
@@ -39,7 +35,7 @@ pub fn relu_derivative(x : f64) -> f64 {
 
 
 pub fn softmax_mul(x : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-    let mut sumx : f64 = 0.0;
+    let mut sumx : f64;
     let mut out = x.clone();
 
     for i in 0..x.nrows() {
@@ -51,13 +47,6 @@ pub fn softmax_mul(x : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
             out[(i,j)] = x[(i,j)].exp() / sumx;
         }
     }
-/*
-    for i in 0..x.nrows() {
-        for j in 0..x.ncols() {
-            out[(i,j)] = x[(i,j)].exp() / sumx;
-        }
-    }
-*/
 
     return out;
 }
@@ -87,7 +76,6 @@ pub fn softmax(x : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
 pub fn softmax_derivative(x : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
     
     let mut out = x.clone();
-
 
     let mut denom : f64 = 0.0;
     for i in 0..x.nrows() {
@@ -169,7 +157,7 @@ pub fn linear(x : f64) -> f64 {
     x
 }
 
-pub fn linear_derivative(x : f64) -> f64 {
+pub fn linear_derivative(_x : f64) -> f64 {
     1.
 }
 
