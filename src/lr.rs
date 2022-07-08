@@ -65,6 +65,11 @@ impl LogisticRegression {
         println!();
     }
 
+    
+    pub fn set_batch_size(&mut self, batch: usize) {
+        self._batch_size = batch;
+    }
+
 
     pub fn enable_dp(&mut self, dp : bool, epsilon : f64, noise_scale : f64, gradient_norm_bound : f64) {
         self._dp = dp;

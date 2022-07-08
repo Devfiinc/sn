@@ -199,6 +199,7 @@ fn main() -> Result<(), Error> {
     let loss1 = lr.get_loss();
 
     lr.reset();
+    lr.set_batch_size(1);
 
     lr.enable_dp(true, _epsilon, _noise_scale, _data_norm);
     lr.fit(x_train.clone(), y_train.clone(), epochs_dp as usize, batch_dp as usize);
