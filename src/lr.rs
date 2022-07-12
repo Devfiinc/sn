@@ -4,6 +4,9 @@ use crate::fact;
 use crate::dp;
 
 
+
+
+
 pub struct LogisticRegression {
     _max_iter : usize,
     _batch_size : usize,
@@ -22,13 +25,17 @@ pub struct LogisticRegression {
     _gradient_norm_bound : f64,
     _ms : dp::MeasurementDMatrix,
 
+    // Classification or continuous value
+    _classification : bool,
+
     // Debug
     _debug : bool
 }
 
 
+
 impl LogisticRegression {
-    pub fn new(max_iter : usize, batch_size : usize, nfeat : usize, nclass : usize, eta : f64, mu : f64, debug : bool) -> LogisticRegression {
+    pub fn new(max_iter : usize, batch_size : usize, nfeat : usize, nclass : usize, eta : f64, mu : f64, classification: bool, debug : bool) -> LogisticRegression {
         let lr = LogisticRegression {
 
             _max_iter : max_iter,
@@ -39,14 +46,16 @@ impl LogisticRegression {
             _mu : mu,
             _loss : 0.0,
 
-            //_w : na::DMatrix::from_fn(nfeat, nclass, |r,c| {rand::random::<f64>() - 0.5}),
-            _w : na::DMatrix::from_element(nfeat, nclass, 0.),
+            _w : na::DMatrix::from_fn(nfeat, nclass, |r,c| {rand::random::<f64>() - 0.5}),
+            //_w : na::DMatrix::from_element(nfeat, nclass, 0.),
 
             _dp : false,
             _epsilon : 0.0,
             _noise_scale : 0.0,
             _gradient_norm_bound : 0.0,
             _ms : dp::MeasurementDMatrix::new(0.0),
+
+            _classification : classification,
 
             _debug : debug,
         };
@@ -59,15 +68,11 @@ impl LogisticRegression {
         self._w = na::DMatrix::from_element(self._nfeat, self._nclass, 0.);
         self._loss = 0.0;
         self._dp = false;
+        self._batch_size = 1;
 
         println!();
         println!(" - Reset weights - - - - - - - - - - - - - -");
         println!();
-    }
-
-    
-    pub fn set_batch_size(&mut self, batch: usize) {
-        self._batch_size = batch;
     }
 
 
@@ -148,8 +153,7 @@ impl LogisticRegression {
     }
 
 
-    //pub fn fit(&mut self, x_train : Vec<Vec<Option<f64>>>, y_train : Vec<Option<f64>>) {
-    pub fn fit(&mut self, x_train : Vec<Vec<Option<f64>>>, y_train : Vec<Option<f64>>, epochs1 : usize, batch1 : usize) {
+    pub fn fit(&mut self, x_train : Vec<Vec<f64>>, y_train : Vec<f64>, epochs1 : usize, batch1 : usize) {
 
         if self._dp {
             println!("Differential privacy enabled");
@@ -158,7 +162,7 @@ impl LogisticRegression {
         let mut li = na::DMatrix::from_element(x_train.len(), x_train[0].len(), 0.);
         //println!("fit");
         for i in 0..x_train.len() {
-            let lii = na::DMatrix::<f64>::from_vec(1, x_train[0].len(), x_train[i].iter().map(|x| x.unwrap()).collect());
+            let lii = na::DMatrix::<f64>::from_vec(1, x_train[0].len(), x_train[i].clone());
             for j in 0..lii.ncols() {
                 li[(i,j)] = lii[(0,j)];
             }
@@ -167,7 +171,7 @@ impl LogisticRegression {
         let mut lo = na::DMatrix::from_element(x_train.len(), self._nclass, 0.);
         for i in 0..y_train.len() {
             let mut loi = na::DMatrix::from_element(1, self._nclass, 0.);
-            loi[(0, y_train[i].unwrap() as usize)] = 1.0;
+            loi[(0, y_train[i] as usize)] = 1.0;
             for j in 0..loi.ncols() {
                 lo[(i,j)] = loi[(0,j)];
             }
@@ -243,7 +247,7 @@ impl LogisticRegression {
     }
 
 
-    pub fn test(&mut self, x_test : Vec<Vec<Option<f64>>>, y_test : Vec<Option<f64>>) {
+    pub fn test(&mut self, x_test : Vec<Vec<f64>>, y_test : Vec<f64>) {
 
         let mut correct : i64 = 0;
 
@@ -252,7 +256,7 @@ impl LogisticRegression {
             //    println!("Testing = {:.2} %", 100.0 * i as f64 / x_test.len() as f64);
             //}
     
-            let li = na::DMatrix::<f64>::from_vec(1, x_test[0].len(), x_test[i].iter().map(|x| x.unwrap()).collect());
+            let li = na::DMatrix::<f64>::from_vec(1, x_test[0].len(), x_test[i].clone());
 
             let z = - li * self._w.clone();
             //let a = z.map(|x| fact::softmax(x));
@@ -260,7 +264,7 @@ impl LogisticRegression {
             let maxid = self.get_max_idx(a.clone());
 
 
-            if maxid == y_test[i].unwrap() as i64 {
+            if maxid == y_test[i] as i64 {
                 correct = correct + 1;
             }
         }
