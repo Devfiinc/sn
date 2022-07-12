@@ -107,6 +107,9 @@ fn split_dataset(data    : Vec<Vec<f64>>, yid     : usize,
 
 
 
+
+
+
 fn logistic_regression(db : &str) {
 
     let mut query = String::new();
@@ -162,13 +165,89 @@ fn logistic_regression(db : &str) {
 
 
 
+fn neural_network(db : &str) {
+
+    let mut query = String::new();
+    query.push_str("SELECT * from ");
+    query.push_str(db);
+
+    let mut data: Vec<Vec<f64>> = vec![];
+    query_vec(&query, &mut data);
+
+
+    let _epsilon = 1.0;
+    let _noise_scale = 1.0;
+    let _data_norm = 1000.0;
+
+    let epochs = 5;
+    let batch = 1000;
+    let epochs_dp = 5;
+    let batch_dp = 1000;
+    let nfeat = 20;
+    let nclass = 10;
+
+    
+    // Shuffle input
+    data.shuffle(&mut thread_rng());
+
+    // Split dataset into train, cross validation and test
+    let mut x_train : Vec<Vec<f64>> = vec![];
+    let mut y_train : Vec<f64> = vec![];
+    let mut x_cv : Vec<Vec<f64>> = vec![];
+    let mut y_cv : Vec<f64> = vec![];
+    let mut x_test : Vec<Vec<f64>> = vec![];
+    let mut y_test : Vec<f64> = vec![];
+
+    split_dataset(data, 20, &mut x_train, &mut y_train, &mut x_cv, &mut y_cv, &mut x_test, &mut y_test);
+
+    let mut nn = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.01, 0.001, true, false);
+
+    let size_li = x_train[0].len();
+    let size_l1 = 50;
+    let size_l2 = 25;
+    let size_lo = 10;
+
+    let learning_rate = 0.005;
+
+    let mut nna = nn::NN::new(vec![           size_li,           size_l1,           size_l2,              size_lo],
+                              vec!["relu".to_string(),"relu".to_string(),"relu".to_string(),"softmax".to_string()], 
+                              learning_rate, 
+                              false);
+
+    nna.enable_dp(true, 0.01, 1.0);
+
+    nna.train(x_train, y_train, 1, 1, 1, 1);
+    nna.test(x_test, y_test);
+}
+
+
+
 
 
 
 
 fn main() -> Result<(), Error> {
 
+    println!("Logistic Regression - Classifier - Tabular Data - SmartNoise/random");
     logistic_regression("sn");
+
+    println!("Neural Network Classifier - Tabular Data - SmartNoise/random");
+    neural_network("sn");
+
+
+    /*
+    println!("Logistic Regression - Continuous - Tabular Data - Kaggle/nki");
+    logistic_regression("nki");
+
+    println!("Neural Network Continuous - Tabular Data - Kaggle/nki");
+    neural_network("nki");
+
+
+
+    println!("Neural Network - Classifier - Image data");
+    */
+
+
 
 
 
@@ -259,57 +338,6 @@ fn main() -> Result<(), Error> {
 
 
 
-    
-
-
-
-
-    //let _epsilon = 3.0;
-    //let _noise_scale = 0.01;
-    //let _data_norm = 7.89;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /*
-
-
-    /*
-    let size_li = x_train[0].len();
-    let size_l1 = 50;
-    let size_l2 = 25;
-    let size_lo = 10;
-
-    let learning_rate = 0.005;
-
-    let mut nna = nn::NN::new(vec![           size_li,           size_l1,           size_l2,              size_lo],
-                              vec!["relu".to_string(),"relu".to_string(),"relu".to_string(),"softmax".to_string()], 
-                              learning_rate, 
-                              false);
-
-    nna.enable_dp(true, 0.01, 1.0);
-
-    nna.train(x_train, y_train, 1, 1, 1, 1);
-    nna.test(x_test, y_test);
-    */
-
-
-
-    */
 
 
     Ok(())

@@ -95,21 +95,18 @@ impl NN {
 
 
     // Train
-    pub fn train(&mut self, x_train : Vec<Vec<Option<f64>>>, y_train : Vec<Option<f64>>, _num_episodes : i64, _max_steps : i64, _target_upd : i64, _exp_upd : i64) {
-        
-        //let mut li = na::DMatrix::from_element(self._topology[0], 1, 0.);
-        //let mut lo = na::DMatrix::from_element(self._topology[self._topology.len() - 1], 1, 0.);
+    pub fn train(&mut self, x_train : Vec<Vec<f64>>, y_train : Vec<f64>, _num_episodes : i64, _max_steps : i64, _target_upd : i64, _exp_upd : i64) {
 
         for i in 0..x_train.len() {
             if (i % 1000) == 0 {
                 println!("Training = {:.2} %", 100.0 * i as f64 / x_train.len() as f64);
             }
     
-            let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_train[i].iter().map(|x| x.unwrap()).collect());
+            let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_train[i].clone());
             let lo : na::DMatrix::<f64> = self.forward(li.clone());
     
             let mut y = na::DMatrix::from_element(1, self._topology[self._topology.len() - 1], 0.);
-            y[(0, y_train[i].unwrap() as usize)] = 1.0;
+            y[(0, y_train[i].clone() as usize)] = 1.0;
     
             self.backward(lo.clone(), y.clone());
         }
@@ -118,7 +115,7 @@ impl NN {
 
 
     // Test
-    pub fn test(&mut self, x_test : Vec<Vec<Option<f64>>>, y_test : Vec<Option<f64>>) {
+    pub fn test(&mut self, x_test : Vec<Vec<f64>>, y_test : Vec<f64>) {
 
         let mut correct : i64 = 0;
 
@@ -127,7 +124,7 @@ impl NN {
                 println!("Testing = {:.2} %", 100.0 * i as f64 / x_test.len() as f64);
             }
     
-            let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_test[i].iter().map(|x| x.unwrap()).collect());
+            let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_test[i].clone());
             let lo : na::DMatrix::<f64> = self.forward(li.clone());
     
             let mut maxid : usize = 0;
@@ -139,7 +136,7 @@ impl NN {
                 }
             }
     
-            if maxid == y_test[i].unwrap() as usize {
+            if maxid == y_test[i].clone() as usize {
                 correct = correct + 1;
             }
         }
