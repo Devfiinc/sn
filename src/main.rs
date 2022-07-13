@@ -165,7 +165,7 @@ fn logistic_regression(db : &str) {
 
 
 
-fn neural_network(db : &str) {
+fn neural_network(db : &str, Vec<usize>) {
 
     let mut query = String::new();
     query.push_str("SELECT * from ");
