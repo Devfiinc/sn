@@ -30,7 +30,7 @@ fn query_col_string(query : &str, idx : usize, data : &mut Vec<Vec<String>>) -> 
     let url = "postgresql://postgres:postgres@localhost:5432/postgres";
     let mut conn = Client::connect(url, NoTls).unwrap();
 
-    for row in conn.query("SELECT * from sn", &[])? {
+    for row in conn.query(query, &[])? {
         let mut v : Vec<String> = Vec::new();
         v.push(row.get(idx));
         data.push(v);
@@ -45,7 +45,7 @@ fn query_vec(query : &str, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
     let url = "postgresql://postgres:postgres@localhost:5432/postgres";
     let mut conn = Client::connect(url, NoTls).unwrap();
 
-    for row in conn.query("SELECT * from sn", &[])? {
+    for row in conn.query(query, &[])? {
         let mut v : Vec<f64> = Vec::new();
         for i in 0..row.len() {
             v.push(row.get(i));
@@ -64,9 +64,14 @@ fn query_vec_range(query : &str, i1 : usize, i2 : usize, data : &mut Vec<Vec<f64
     let url = "postgresql://postgres:postgres@localhost:5432/postgres";
     let mut conn = Client::connect(url, NoTls).unwrap();
 
-    for row in conn.query("SELECT * from sn", &[])? {
+    let mut i2i = i2;
+
+    for row in conn.query(query, &[])? {
+        if i2i > row.len() {
+            i2i = row.len();
+        }
         let mut v : Vec<f64> = Vec::new();
-        for i in i1..i2 {
+        for i in i1..i2i {
             v.push(row.get(i));
         }
         data.push(v);
@@ -110,14 +115,30 @@ fn split_dataset(data    : Vec<Vec<f64>>, yid     : usize,
 
 
 
-fn logistic_regression(db : &str) {
+fn logistic_regression(db : &str, class : bool) {
 
     let mut query = String::new();
     query.push_str("SELECT * from ");
     query.push_str(db);
 
+
     let mut data: Vec<Vec<f64>> = vec![];
-    query_vec(&query, &mut data);
+
+    if db == "nki" {
+
+        let res = query_vec_range(&query, 2, 20, &mut data);
+        println!("{:?}", res);
+
+    } else if db == "sn" {
+
+        let res = query_vec(&query, &mut data);
+        println!("{:?}", res);
+
+    }
+
+    println!("{}", db);
+    println!("{}", data[0][0]);
+
 
 
     let _epsilon = 1.0;
@@ -165,7 +186,7 @@ fn logistic_regression(db : &str) {
 
 
 
-fn neural_network(db : &str, Vec<usize>) {
+fn neural_network(db : &str, topology : Vec<usize>) {
 
     let mut query = String::new();
     query.push_str("SELECT * from ");
@@ -228,24 +249,46 @@ fn neural_network(db : &str, Vec<usize>) {
 
 fn main() -> Result<(), Error> {
 
-    println!("Logistic Regression - Classifier - Tabular Data - SmartNoise/random");
-    logistic_regression("sn");
+    let opt : usize = 3;
 
-    println!("Neural Network Classifier - Tabular Data - SmartNoise/random");
-    neural_network("sn");
+    if opt == 1{
+
+        println!("Logistic Regression - Classifier - Tabular Data - SmartNoise/random");
+        logistic_regression("sn", true);
+
+    } else if opt == 2 {
+
+        println!("Neural Network Classifier - Tabular Data - SmartNoise/random");
+        neural_network("sn", vec![25,25,10]);
+
+    } else if opt == 3 {
+
+        println!("Logistic Regression - Continuous - Tabular Data - Kaggle/nki");
+        logistic_regression("nki", false);
+
+    } else if opt == 4 {
+
+        println!("Neural Network Continuous - Tabular Data - Kaggle/nki");
+        neural_network("nki", vec![25,25,10]);
+
+    } else if opt == 5 {
+
+        println!("Neural Network - Classifier - Image data");
+
+    }
 
 
-    /*
-    println!("Logistic Regression - Continuous - Tabular Data - Kaggle/nki");
-    logistic_regression("nki");
 
-    println!("Neural Network Continuous - Tabular Data - Kaggle/nki");
-    neural_network("nki");
+    
 
 
 
-    println!("Neural Network - Classifier - Image data");
-    */
+
+
+
+
+
+
 
 
 
