@@ -68,7 +68,6 @@ def loadImages(path, train):
             files.append(image[:-4])
 
     for file in files:
-        print(file)
         if train:
             id, im = file.split("_", 1)
             imx = cv2.imread(path + file + ".tif", cv2.IMREAD_GRAYSCALE)
