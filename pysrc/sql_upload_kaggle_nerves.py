@@ -81,8 +81,6 @@ def loadImages(path, train):
             imy = np.array([0])
             data.append(imdata(id, im, imx, imy))
 
-        break
-
     return data
 
 
@@ -117,7 +115,7 @@ def main(argv):
 
     # Load train set
     for i in range(len(train)):
-        print("Inserting train into nerves:", i, "of", len(train))
+        print("Inserting train into nerves:", i+1, "of", len(train))
         query  = "INSERT INTO nerves("
         #query += "id,"
         query += "patient_id,"
@@ -134,7 +132,7 @@ def main(argv):
 
     # Load test set, patient id starting in 10000
     for i in range(len(test)):
-        print("Inserting test into nerves:", i, "of", len(test))
+        print("Inserting test into nerves:", i+1, "of", len(test))
         query  = "INSERT INTO nerves("
         #query += "id,"
         query += "patient_id,"
