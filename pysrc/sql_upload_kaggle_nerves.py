@@ -52,7 +52,7 @@ class imdata:
 
 
 
-def loadImages(path, train):
+def load_images(path, train):
     image_list = listdir(path)
     image_list = sorted(image_list)
     imx = []
@@ -67,7 +67,10 @@ def loadImages(path, train):
         else:
             files.append(image[:-4])
 
+    cnt = 0
     for file in files:
+        cnt = cnt + 1
+        print("Loading image:", cnt, "of", len(files))
         if train:
             id, im = file.split("_", 1)
             imx = cv2.imread(path + file + ".tif", cv2.IMREAD_GRAYSCALE)
@@ -83,21 +86,51 @@ def loadImages(path, train):
     return data
 
 
+def list_files(path):
+    image_list = listdir(path)
+    image_list = sorted(image_list)
+    files = []
+
+    for image in image_list:
+        if "mask" in image:
+            continue
+        else:
+            files.append(image[:-4])
+
+    return files
+
+
+
+def load_image(path, file, train):
+    if train:
+        id, im = file.split("_", 1)
+        imx = cv2.imread(path + file + ".tif", cv2.IMREAD_GRAYSCALE)
+        imy = cv2.imread(path + file + "_mask.tif", cv2.IMREAD_GRAYSCALE)
+        return imdata(id, im, imx, imy)
+    else:
+        imx = cv2.imread(path + file + ".tif", cv2.IMREAD_GRAYSCALE)
+        return imdata(file, "0", imx, np.array([0]))
 
 
 
 def main(argv):
-    train = loadImages("/home/icirauqui/w0rkspace_Arc/sn/datasets/ultrasound-nerve-segmentation/train/", True)
-    test  = loadImages("/home/icirauqui/w0rkspace_Arc/sn/datasets/ultrasound-nerve-segmentation/test/", False)
+    #print("Read train data")
+    #train = load_images("/home/icirauqui/w0rkspace/sn/datasets/ultrasound-nerve-segmentation/train/", True)
+    
+    #print("Read test data")
+    #test  = load_images("/home/icirauqui/w0rkspace/sn/datasets/ultrasound-nerve-segmentation/test/", False)
+
 
 
     # Connect to Postgresql database
+    print("Connect to database")
     params = config()
     conn = psycopg2.connect(**params)
     conn.autocommit = True
     cur = conn.cursor()
 
     # Create table
+    print("Create table")
     query  = "DROP TABLE IF EXISTS nerves;"
     query += "CREATE TABLE IF NOT EXISTS nerves ("
     query += "  patient_id    INT,"
@@ -112,37 +145,54 @@ def main(argv):
 
     cur.execute("SET search_path = schema1, public;")
 
-    # Load train set
-    for i in range(len(train)):
-        print("Inserting train into nerves:", i+1, "of", len(train))
+
+    path_train = "/home/icirauqui/w0rkspace/sn/datasets/ultrasound-nerve-segmentation/train/"
+    files_train = list_files(path_train)
+
+    train_cnt = 1
+    for file in files_train:
+        print("Loading train:", train_cnt, "of", len(files_train))
+        train_cnt += 1
+
+        imdata = load_image(path_train, file, True)
+
         query  = "INSERT INTO nerves("
-        #query += "id,"
         query += "patient_id,"
         query += "image_id  ,"
         query += "imx       ,"
         query += "imy       )"
         query += " VALUES ("
-        query += str(train[i]._id) + ", "
-        query += str(train[i]._im) + ", "
-        query += "ARRAY" + str(train[i]._imx.tolist()) + ", "
-        query += "ARRAY" + str(train[i]._imy.tolist())
+        query += str(imdata._id) + ", "
+        query += str(imdata._im) + ", "
+        query += "ARRAY" + str(imdata._imx.tolist()) + ", "
+        query += "ARRAY" + str(imdata._imy.tolist())
         query += ")"
         cur.execute(query)
 
-    # Load test set, patient id starting in 10000
-    for i in range(len(test)):
-        print("Inserting test into nerves:", i+1, "of", len(test))
+
+
+    path_test = "/home/icirauqui/w0rkspace/sn/datasets/ultrasound-nerve-segmentation/test/"
+    files_test = list_files(path_test)
+
+    test_cnt = 1
+    for file in files_test:
+        print("Loading test:", test_cnt, "of", len(files_test))
+        test_cnt += 1
+
+        imdata = load_image(path_test, file, False)
+
         query  = "INSERT INTO nerves("
-        #query += "id,"
         query += "patient_id,"
         query += "image_id  ,"
         query += "imx       "
         query += ") VALUES ("
-        query += str(10000 + int(test[i]._id)) + ", "
-        query += str(test[i]._im) + ", "
-        query += "ARRAY" + str(test[i]._imx.tolist())
+        query += str(10000 + int(imdata._id)) + ", "
+        query += str(imdata._im) + ", "
+        query += "ARRAY" + str(imdata._imx.tolist())
         query += ")"
         cur.execute(query)
+
+
 
     # Close connection
     cur.close()
