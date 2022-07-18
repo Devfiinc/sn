@@ -221,17 +221,28 @@ fn neural_network(db : &str, topology : Vec<usize>) {
 
     split_dataset(data, 20, &mut x_train, &mut y_train, &mut x_cv, &mut y_cv, &mut x_test, &mut y_test);
 
-    let mut nn = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.01, 0.001, true, false);
 
     let size_li = x_train[0].len();
     let size_l1 = 50;
     let size_l2 = 25;
     let size_lo = 10;
 
+    let mut _topology : Vec<usize> = vec![x_train[0].len()];
+    for i in topology.clone() {
+        _topology.push(i);
+    }
+    
+    let mut _facts : Vec<String> = vec![];
+    for i in 0..topology.len()-1 {
+        facts.push("relu".to_string());
+    }
+    facts.push("softmax".to_string());
+
+
     let learning_rate = 0.005;
 
-    let mut nna = nn::NN::new(vec![           size_li,           size_l1,           size_l2,              size_lo],
-                              vec!["relu".to_string(),"relu".to_string(),"relu".to_string(),"softmax".to_string()], 
+    let mut nna = nn::NN::new(_topology,
+                              _facts, 
                               learning_rate, 
                               false);
 
@@ -276,23 +287,6 @@ fn main() -> Result<(), Error> {
         println!("Neural Network - Classifier - Image data");
 
     }
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     /*
