@@ -163,7 +163,7 @@ impl NN {
             }
 
             
-            println!("Validation = {:.2} %", self.compute_accuracy(x_val, y_val));
+            println!("Validation = {:.2} %", self.compute_accuracy(x_val.clone(), y_val.clone()));
             
         }
     }
