@@ -42,7 +42,7 @@ pub fn softmax_mul(x : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
 
     for i in 0..x.nrows() {
         sumx = 0.0;
-        for j in 0..x.ncols() {z
+        for j in 0..x.ncols() {
             sumx = sumx + x[(i,j)].exp();
         }
         for j in 0..x.ncols() {
