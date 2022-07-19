@@ -37,7 +37,7 @@ impl NN {
 
         for i in 0..topology.len() - 1 {
             let fact = activation_functions[i].clone();
-            nn._model.push(nnlayer::NNLayer::new(topology[i] + 1, topology[i+1], fact, learning_rate, debug));            
+            nn._model.push(nnlayer::NNLayer::new(topology[i] /*+ 1*/, topology[i+1], fact, learning_rate, debug));            
         }
 
         return nn;
@@ -63,7 +63,7 @@ impl NN {
         //println!("Vals init {} x {}", vals.nrows(), vals.ncols());
         for i in 0..self._model.len() {
         //    println!("Layer {} of {} - vals {} x {}", i+1, self._model.len(), vals.nrows(), vals.ncols());
-            vals = self._model[i].forward(vals.clone());
+            vals = self._model[i].forward(vals);
         }
 
         return vals;
@@ -86,6 +86,7 @@ impl NN {
         //println!("Vals init {} x {}", delta.nrows(), delta.ncols());
         //for i in (0..self._model.len() - 1).rev() {
         for i in (0..self._model.len()).rev() {
+            //println!("{:?} of {:?}", i, self._model.len());
             //println!("Layer {} of {} - vals {} x {}", i+1, self._model.len(), delta.nrows(), delta.ncols());
             delta = self._model[i].backward(delta.clone());
         }
@@ -149,14 +150,16 @@ impl NN {
 
         for i in 0.._num_episodes {
             for i in 0..x_train.len() {
-                if (i % 1000) == 0 {
+                if (i % 100) == 0 {
                     println!("Training = {:.2} %", 100.0 * i as f64 / x_train.len() as f64);
                 }
-                println!("{:?} of {:?}", i, x_train.len());
+                //println!("{:?} of {:?}", i+1, x_train.len());
         
+                //println!("Forward");
                 let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_train[i].clone());
                 let lo : na::DMatrix::<f64> = self.forward(li.clone());
         
+                //println!("Backward");
                 let mut y = na::DMatrix::from_element(1, self._topology[self._topology.len() - 1], 0.);
                 y[(0, y_train[i].clone() as usize)] = 1.0;
         

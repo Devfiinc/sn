@@ -52,9 +52,9 @@ impl NNLayer {
             _ms : dp::MeasurementDMatrix::new(0.0),
         
             _weights : na::DMatrix::from_fn(input_size, output_size, |_r,_c| {rand::random::<f64>() - 0.5}),
-            _qvalues : na::DMatrix::from_element(1, input_size /*+ 1*/, 0.),
-            _qvaluesu : na::DMatrix::from_element(1, input_size /*+ 1*/, 0.), 
-            _input : na::DMatrix::from_element(1, input_size /*+ 1*/, 0.),
+            _qvalues : na::DMatrix::from_element(1, input_size + 1, 0.),
+            _qvaluesu : na::DMatrix::from_element(1, input_size + 1, 0.), 
+            _input : na::DMatrix::from_element(1, input_size + 1, 0.),
         
             //Adam Optimizer
             _m : na::DMatrix::from_element(input_size, output_size, 0.), 
@@ -91,23 +91,19 @@ impl NNLayer {
     }
 
     pub fn forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-
-        /*
         let mut input_with_bias = na::DMatrix::from_element(1, input.ncols() + 1, 0.);
 
         for i in 0..input.ncols() {
-            input_with_bias[(0,i+1)] = input[(0,i)];
+            input_with_bias[(0,i)] = input[(0,i)];
         }
-        input_with_bias[(0,0)] = 1.0;
+        input_with_bias[(0,input.ncols())] = 1.0;
 
+        //self._input = na::DMatrix::from_element(1, self._input_size + 1, 0.);
         self._input = input_with_bias.clone();
-        */
-
-        self._input = input.clone();
 
         //println!("input with bias {} {}", input_with_bias.nrows(), input_with_bias.transpose().ncols());
         //println!("weights          {} {}", self._weights.nrows(), self._weights.ncols());
-        self._qvalues = self._input.clone() * self._weights.clone();
+        self._qvalues = input_with_bias * self._weights.clone();
         self._qvaluesu = self._qvalues.clone();
     
         if self._f_act == String::from("relu") {
@@ -133,11 +129,6 @@ impl NNLayer {
 
 
     pub fn update_weights(&mut self, gradient : na::DMatrix::<f64>) {
-        self._weights = self._weights.clone() - self._learning_rate * gradient.clone();
-    }
-
-
-    pub fn update_weights_adam(&mut self, gradient : na::DMatrix::<f64>) {
         //let mut m_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
         //let mut v_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
         //let mut m_vec_hat = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
@@ -208,14 +199,12 @@ impl NNLayer {
             adjusted_mul[(0,i)] = qvalues_temp[(0,i)] * gradient_from_above[(0,i)];
         }
 
-        //println!("adjusted_mul {} {}", adjusted_mul.nrows(), adjusted_mul.ncols());
-        let mut delta_i = na::DMatrix::from_element(1, self._input.ncols() /*- 1*/, 0.);
+        let mut delta_i = na::DMatrix::from_element(1, self._input.ncols() - 1, 0.);
         let delta_i_tmp = &adjusted_mul * self._weights.transpose();
         for i in 0..delta_i.nrows() {
             delta_i[(i,0)] = delta_i_tmp[(i,0)];
         }
         
-        //println!("delta_i {} {}", delta_i.nrows(), delta_i.ncols());
         let mut d_i = na::DMatrix::from_element(self._input.ncols(), adjusted_mul.ncols(), 0.);
         for i in 0..self._input.nrows() {
             for j in 0..adjusted_mul.nrows() {

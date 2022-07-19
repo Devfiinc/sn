@@ -346,8 +346,8 @@ fn neural_network(db : &str, topology : Vec<usize>) {
 
 fn neural_network_mnist(topology : Vec<usize>) {
 
-    let mut query_x = String::from("SELECT image from mnist");
-    let mut query_y = String::from("SELECT label from mnist");
+    let mut query_x = String::from("SELECT image from mnist limit 10000");
+    let mut query_y = String::from("SELECT label from mnist limit 10000");
 
 
     let mut data_x: Vec<Vec<f64>> = vec![];
