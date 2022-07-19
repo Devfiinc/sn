@@ -83,12 +83,23 @@ impl NN {
 
         let mut delta = (2.0 / n) * (output.clone() - ytrain.clone());
 
+        //println!("Output {:?}", output);
+        //println!("ytrain {:?}", ytrain);
+        //println!("");
+        //println!("");
+        //println!("delta  {:?}", delta);
+        //println!("");
+        //println!("");
+
         //println!("Vals init {} x {}", delta.nrows(), delta.ncols());
         //for i in (0..self._model.len() - 1).rev() {
         for i in (0..self._model.len()).rev() {
             //println!("{:?} of {:?}", i, self._model.len());
             //println!("Layer {} of {} - vals {} x {}", i+1, self._model.len(), delta.nrows(), delta.ncols());
             delta = self._model[i].backward(delta.clone());
+            //println!("delta {} {:?}", i, delta);
+            //println!("");
+            //println!("");
         }
     }
 
@@ -129,6 +140,10 @@ impl NN {
         let mut v0 : usize = 0;
 
         for i in 0..x_val.len() {
+            if (i % 100) == 0 {
+                println!("Validating = {:.2} %", 100.0 * i as f64 / x_val.len() as f64);
+            }
+
             let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_val[i].clone());
             let lo : na::DMatrix::<f64> = self.forward(li.clone());
         
@@ -166,7 +181,6 @@ impl NN {
                 self.backward(lo.clone(), y.clone());
             }
 
-            
             println!("Validation = {:.2} %", self.compute_accuracy(x_val.clone(), y_val.clone()));
             
         }

@@ -346,8 +346,8 @@ fn neural_network(db : &str, topology : Vec<usize>) {
 
 fn neural_network_mnist(topology : Vec<usize>) {
 
-    let mut query_x = String::from("SELECT image from mnist limit 10000");
-    let mut query_y = String::from("SELECT label from mnist limit 10000");
+    let mut query_x = String::from("SELECT image from mnist");
+    let mut query_y = String::from("SELECT label from mnist");
 
 
     let mut data_x: Vec<Vec<f64>> = vec![];
@@ -405,8 +405,76 @@ fn neural_network_mnist(topology : Vec<usize>) {
 
     /*nna.enable_dp(true, 0.01, 1.0);*/
 
-    nna.train(x_train, y_train, x_cv, y_cv, 1, 1, 1, 1);
-    nna.test(x_test, y_test);
+    //nna.train(x_train, y_train, x_cv, y_cv, 5, 1, 1, 1);
+    nna.train(x_train.clone(), y_train.clone(), x_cv.clone(), y_cv.clone(), 5, 1, 1, 1);
+    //nna.test(x_test, y_test);
+}
+
+
+fn neural_network_nerves(topology : Vec<usize>) {
+
+    let mut query_x = String::from("SELECT imx from nerves");
+    let mut query_y = String::from("SELECT imy from nerves");
+
+
+    let mut data_x: Vec<Vec<f64>> = vec![];
+    //query_vec_i64_f64(&query_x, &mut data_x);
+    query_images(&query_x, &mut data_x);
+
+    let mut data_y: Vec<Vec<f64>> = vec![];
+    query_images(&query_y, &mut data_y);
+
+
+    let _epsilon = 1.0;
+    let _noise_scale = 1.0;
+    let _data_norm = 1000.0;
+
+    let epochs = 5;
+    let batch = 1000;
+    let epochs_dp = 5;
+    let batch_dp = 1000;
+    let nfeat = 20;
+    let nclass = 10;
+
+    
+    // Shuffle input
+    // data.shuffle(&mut thread_rng());
+
+    // Split dataset into train, cross validation and test
+    let mut x_train : Vec<Vec<f64>> = vec![];
+    let mut y_train : Vec<f64> = vec![];
+    let mut x_cv : Vec<Vec<f64>> = vec![];
+    let mut y_cv : Vec<f64> = vec![];
+    let mut x_test : Vec<Vec<f64>> = vec![];
+    let mut y_test : Vec<f64> = vec![];
+
+    split_dataset_xy(data_x, data_y, &mut x_train, &mut y_train, &mut x_cv, &mut y_cv, &mut x_test, &mut y_test);
+
+
+    let mut _topology : Vec<usize> = vec![x_train[0].len()];
+    for i in topology.clone() {
+        _topology.push(i);
+    }
+    
+    let mut _facts : Vec<String> = vec![];
+    for i in 0..topology.len()-1 {
+        _facts.push("sigmoid".to_string());
+    }
+    _facts.push("softmax".to_string());
+
+
+    let learning_rate = 0.001;
+
+    let mut nna = nn::NN::new(_topology,
+                              _facts, 
+                              learning_rate, 
+                              false);
+
+    /*nna.enable_dp(true, 0.01, 1.0);*/
+
+    //nna.train(x_train, y_train, x_cv, y_cv, 5, 1, 1, 1);
+    nna.train(x_train.clone(), y_train.clone(), x_train.clone(), y_train.clone(), 5, 1, 1, 1);
+    //nna.test(x_test, y_test);
 }
 
 
@@ -443,6 +511,11 @@ fn main() -> Result<(), Error> {
 
         println!("Neural Network - Classifier - Image data");
         neural_network_mnist(vec![128,64,10]);
+
+    } else if opt == 6 {
+
+        println!("Neural Network - Classifier - Image data - Kaggle nerve dataset");
+        neural_network_nerves(vec![128,64,10]);
 
     }
 

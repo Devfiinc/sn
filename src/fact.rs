@@ -77,7 +77,15 @@ pub fn softmax(x : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
 
 pub fn softmax_derivative(x : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
     
-    let xd = softmax(x.clone());
+//    let exps = x.clone();
+//    for i in 0..x.rows() {
+//        for j in 0..x.ncols() {
+//            exps[(i,j)] = 
+//        }
+//
+//    }
+    
+//    let xd = softmax(x.clone());
 
     
     let mut out = x.clone();

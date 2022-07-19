@@ -184,44 +184,70 @@ impl NNLayer {
     pub fn backward(&mut self, gradient_from_above : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
         let mut adjusted_mul = gradient_from_above.clone();
 
-        let qvalues_temp = self._qvaluesu.clone();
+        let mut qvalues_temp = self._qvaluesu.clone();
 
 
         if self._f_act == String::from("relu") {
-            self._qvalues = self._qvalues.map(|x| fact::relu_derivative(x));
+            qvalues_temp = qvalues_temp.map(|x| fact::relu_derivative(x));
         }
         else if self._f_act == String::from("sigmoid") {
-            self._qvalues = self._qvalues.map(|x| fact::sigmoid_derivative(x));
+            qvalues_temp = qvalues_temp.map(|x| fact::sigmoid_derivative(x));
         }
         else if self._f_act == String::from("tanh") {
-            self._qvalues = self._qvalues.map(|x| fact::tanh_derivative(x));
+            qvalues_temp = qvalues_temp.map(|x| fact::tanh_derivative(x));
         }
         else if self._f_act == String::from("softmax") {
-            self._qvalues = fact::softmax(self._qvalues.clone());
+            qvalues_temp = fact::softmax_derivative(qvalues_temp.clone());
             //self._qvalues = self._qvalues.map(|x| fact::softmax(x));
         }
         else {
-            self._qvalues = self._qvalues.map(|x| fact::linear_derivative(x));
+            qvalues_temp = qvalues_temp.map(|x| fact::linear_derivative(x));
         }
+
+        /*
+        println!("qvalues_temp {:?}", qvalues_temp);
+        println!("");
+
+        println!("self._input shape {:?}", self._input.shape());
+        println!("");
+
+        println!("qvalues_temp shape {:?}", qvalues_temp.shape());
+        println!("");
+
+        println!("adjusted_mul shape {:?}", adjusted_mul.shape());
+        println!("");
+
+        println!("gradient_from_above shape {:?}", gradient_from_above.shape());
+        println!("");
+
+        println!("self._weights shape {:?}", self._weights.shape());
+        println!("");
+        */
 
         for i in 0..adjusted_mul.ncols() {
             adjusted_mul[(0,i)] = qvalues_temp[(0,i)] * gradient_from_above[(0,i)];
         }
 
-        //println!("adjusted_mul {} {}", adjusted_mul.nrows(), adjusted_mul.ncols());
-        let mut delta_i = na::DMatrix::from_element(1, self._input.ncols() /*- 1*/, 0.);
-        let delta_i_tmp = &adjusted_mul * self._weights.transpose();
-        for i in 0..delta_i.nrows() {
-            delta_i[(i,0)] = delta_i_tmp[(i,0)];
-        }
+        //println!("adjusted_mul {:?}", adjusted_mul);
+        //println!("");
+
+        let delta_i = &adjusted_mul * self._weights.transpose();
+
+        //println!("delta_i {:?}", delta_i);
+        //println!("");
         
         //println!("delta_i {} {}", delta_i.nrows(), delta_i.ncols());
-        let mut d_i = na::DMatrix::from_element(self._input.ncols(), adjusted_mul.ncols(), 0.);
-        for i in 0..self._input.nrows() {
-            for j in 0..adjusted_mul.nrows() {
-                d_i[(i,j)] = self._input[(i,0)] * adjusted_mul[(j,0)];
-            }
-        }
+        let d_i = self._input.transpose() * adjusted_mul;
+
+        //let mut d_i = na::DMatrix::from_element(self._input.ncols(), adjusted_mul.ncols(), 0.);
+        //for i in 0..self._input.nrows() {
+        //    for j in 0..adjusted_mul.nrows() {
+        //        d_i[(i,j)] = self._input[(i,0)] * adjusted_mul[(j,0)];
+        //    }
+        //}
+
+        //println!("d_i {:?}", d_i);
+        //println!("");
 
         self.update_weights(d_i.clone());
 
