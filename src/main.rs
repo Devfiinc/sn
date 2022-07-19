@@ -48,7 +48,7 @@ fn query_vec(query : &str, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
     for row in conn.query(query, &[])? {
         let mut v : Vec<f64> = Vec::new();
         for i in 0..row.len() {
-            v.push(row.get(i));
+            v.push(row.get(i) as f64 / 255.0);
         }
         data.push(v);
     }
