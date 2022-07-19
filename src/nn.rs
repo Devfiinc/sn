@@ -162,7 +162,9 @@ impl NN {
                 self.backward(lo.clone(), y.clone());
             }
 
-
+            
+            println!("Validation = {:.2} %", self.compute_accuracy(x_val, y_val));
+            
         }
     }
 
