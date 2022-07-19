@@ -152,6 +152,7 @@ impl NN {
                 if (i % 1000) == 0 {
                     println!("Training = {:.2} %", 100.0 * i as f64 / x_train.len() as f64);
                 }
+                println!("{:?} of {:?}", i, x_train.len());
         
                 let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_train[i].clone());
                 let lo : na::DMatrix::<f64> = self.forward(li.clone());
