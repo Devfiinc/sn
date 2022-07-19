@@ -3,9 +3,11 @@ pub fn sigmoid(x : f64) -> f64 {
     1. / (1. + (-x).exp())
 }
 
+
 pub fn sigmoid_derivative(x : f64) -> f64 {
-    let sigmoid_x = sigmoid(x);
-    sigmoid_x * (1. - sigmoid_x)
+    // let sigmoid_x = sigmoid(x);
+    // sigmoid_x * (1. - sigmoid_x)
+    (-x).exp() / ((-x).exp() + 1.0).powf(2.0)
 }
 
 pub fn tanh(x : f64) -> f64 {
@@ -40,7 +42,7 @@ pub fn softmax_mul(x : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
 
     for i in 0..x.nrows() {
         sumx = 0.0;
-        for j in 0..x.ncols() {
+        for j in 0..x.ncols() {z
             sumx = sumx + x[(i,j)].exp();
         }
         for j in 0..x.ncols() {
