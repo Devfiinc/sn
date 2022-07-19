@@ -110,7 +110,7 @@ fn split_dataset(data    : Vec<Vec<f64>>, yid     : usize,
 
 
 
-fn split_dataset_xy(dx      : Vec<Vec<f64>>,      dy      : Vec<f64>,
+fn split_dataset_xy(dx      : Vec<Vec<f64>>,      dy      : Vec<Vec<f64>>,
                     x_train : &mut Vec<Vec<f64>>, y_train : &mut Vec<f64>,
                     x_cv    : &mut Vec<Vec<f64>>, y_cv    : &mut Vec<f64>,
                     x_test  : &mut Vec<Vec<f64>>, y_test  : &mut Vec<f64>) {
@@ -120,18 +120,18 @@ fn split_dataset_xy(dx      : Vec<Vec<f64>>,      dy      : Vec<f64>,
     let mut _size_test = 0.15;
                     
     let mut i : i64 = 0;
-    let split_train : i64 = (data.len() as f64 * _size_train) as i64;
-    let split_cv : i64 = (data.len() as f64 * (_size_train + _size_cv)) as i64;
-    for n in len(dx) {
+    let split_train : i64 = (dx.len() as f64 * _size_train) as i64;
+    let split_cv : i64 = (dx.len() as f64 * (_size_train + _size_cv)) as i64;
+    for n in 0..dx.len() {
         if i < split_train {
             x_train.push(dx[n].clone());
-            y_train.push(dy[n].clone());
+            y_train.push(dy[n][0].clone());
         } else if i < split_cv {
             x_cv.push(dx[n].clone());
-            y_cv.push(dy[n].clone());
+            y_cv.push(dy[n][0].clone());
         } else {
             x_test.push(dx[n].clone());
-            y_test.push(dy[n].clone());
+            y_test.push(dy[n][0].clone());
         }
         i = i + 1;
     }
@@ -262,9 +262,9 @@ fn neural_network(db : &str, topology : Vec<usize>) {
     
     let mut _facts : Vec<String> = vec![];
     for i in 0..topology.len()-1 {
-        facts.push("relu".to_string());
+        _facts.push("relu".to_string());
     }
-    facts.push("softmax".to_string());
+    _facts.push("softmax".to_string());
 
 
     let learning_rate = 0.005;
@@ -276,7 +276,7 @@ fn neural_network(db : &str, topology : Vec<usize>) {
 
     nna.enable_dp(true, 0.01, 1.0);
 
-    nna.train(x_train, y_train, 1, 1, 1, 1);
+    nna.train(x_train, y_train, x_cv, y_cv, 1, 1, 1, 1);
     nna.test(x_test, y_test);
 }
 
@@ -286,7 +286,7 @@ fn neural_network(db : &str, topology : Vec<usize>) {
 
 fn neural_network_mnist(topology : Vec<usize>) {
 
-    let mut query_x = String::from("SELECT image from mnist");Así son
+    let mut query_x = String::from("SELECT image from mnist");
     let mut query_y = String::from("SELECT label from mnist");
 
 
@@ -310,7 +310,7 @@ fn neural_network_mnist(topology : Vec<usize>) {
 
     
     // Shuffle input
-    data.shuffle(&mut thread_rng());
+    // data.shuffle(&mut thread_rng());
 
     // Split dataset into train, cross validation and test
     let mut x_train : Vec<Vec<f64>> = vec![];
@@ -330,9 +330,9 @@ fn neural_network_mnist(topology : Vec<usize>) {
     
     let mut _facts : Vec<String> = vec![];
     for i in 0..topology.len()-1 {
-        facts.push("sigmoid".to_string());
+        _facts.push("sigmoid".to_string());
     }
-    facts.push("softmax".to_string());
+    _facts.push("softmax".to_string());
 
 
     let learning_rate = 0.001;
@@ -381,7 +381,7 @@ fn main() -> Result<(), Error> {
     } else if opt == 5 {
 
         println!("Neural Network - Classifier - Image data");
-        neural_network_mnist("mnist", vec![128,64,10]);
+        neural_network_mnist(vec![128,64,10]);
 
     }
 

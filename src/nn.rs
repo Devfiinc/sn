@@ -74,7 +74,7 @@ impl NN {
     // Back propagation
     pub fn backward(&mut self, output : na::DMatrix::<f64>, ytrain : na::DMatrix::<f64>) {
 
-        let n : f64 = 0.0;
+        let mut n : f64 = 0.0;
         if output.nrows() > output.ncols() {
             n = output.nrows() as f64;
         } else  {
@@ -103,9 +103,9 @@ impl NN {
 
 
     // Possition of max
-    pub fn argmax(v : na::DMatrix::<f64>) -> f64 {
-        let maxval : f64 = 0.0;
-        let maxidx : f64 = 0.0;
+    pub fn argmax(&self, v : na::DMatrix::<f64>) -> f64 {
+        let mut maxval : f64 = 0.0;
+        let mut maxidx : f64 = 0.0;
         for i in 0..v.nrows() {
             for j in 0..v.ncols() {
                 if v[(i,j)] > maxval {
@@ -127,11 +127,11 @@ impl NN {
         let mut v1 : usize = 0;
         let mut v0 : usize = 0;
 
-        for i in 0..len(x_val){
+        for i in 0..x_val.len() {
             let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_val[i].clone());
             let lo : na::DMatrix::<f64> = self.forward(li.clone());
         
-            let yo = argmax(lo);
+            let yo = self.argmax(lo);
             if yo == y_val[i] {
                 v1 += 1;
             }
