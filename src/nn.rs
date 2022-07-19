@@ -73,7 +73,15 @@ impl NN {
 
     // Back propagation
     pub fn backward(&mut self, output : na::DMatrix::<f64>, ytrain : na::DMatrix::<f64>) {
-        let mut delta = output.clone() - ytrain.clone();
+
+        let n : f64 = 0.0;
+        if output.nrows() > output.ncols() {
+            n = output.nrows() as f64;
+        } else  {
+            n = output.ncols() as f64;
+        }
+
+        let mut delta = (2.0 / n) * (output.clone() - ytrain.clone());
 
         //println!("Vals init {} x {}", delta.nrows(), delta.ncols());
         //for i in (0..self._model.len() - 1).rev() {
@@ -94,21 +102,67 @@ impl NN {
 
 
 
-    // Train
-    pub fn train(&mut self, x_train : Vec<Vec<f64>>, y_train : Vec<f64>, _num_episodes : i64, _max_steps : i64, _target_upd : i64, _exp_upd : i64) {
-
-        for i in 0..x_train.len() {
-            if (i % 1000) == 0 {
-                println!("Training = {:.2} %", 100.0 * i as f64 / x_train.len() as f64);
+    // Possition of max
+    pub fn argmax(v : na::DMatrix::<f64>) -> f64 {
+        let maxval : f64 = 0.0;
+        let maxidx : f64 = 0.0;
+        for i in 0..v.nrows() {
+            for j in 0..v.ncols() {
+                if v[(i,j)] > maxval {
+                    maxval = v[(i,j)];
+                    if v.nrows() > v.ncols() {
+                        maxidx = i as f64;
+                    } else {
+                        maxidx = j as f64;
+                    }
+                }
             }
-    
-            let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_train[i].clone());
+        }
+        return maxidx;
+    }
+
+
+    // Compute accuracy
+    pub fn compute_accuracy(&mut self, x_val : Vec<Vec<f64>>, y_val : Vec<f64>) -> f64 {
+        let mut v1 : usize = 0;
+        let mut v0 : usize = 0;
+
+        for i in 0..len(x_val){
+            let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_val[i].clone());
             let lo : na::DMatrix::<f64> = self.forward(li.clone());
-    
-            let mut y = na::DMatrix::from_element(1, self._topology[self._topology.len() - 1], 0.);
-            y[(0, y_train[i].clone() as usize)] = 1.0;
-    
-            self.backward(lo.clone(), y.clone());
+        
+            let yo = argmax(lo);
+            if yo == y_val[i] {
+                v1 += 1;
+            }
+            v0 += 1;            
+        }
+
+        return 100.0 * (v1 as f64 / v0 as f64);
+    }
+
+
+    // Train
+    pub fn train(&mut self, x_train : Vec<Vec<f64>>, y_train : Vec<f64>,
+                            x_val : Vec<Vec<f64>>,   y_val : Vec<f64>, 
+                            _num_episodes : i64, _max_steps : i64, _target_upd : i64, _exp_upd : i64) {
+
+        for i in 0.._num_episodes {
+            for i in 0..x_train.len() {
+                if (i % 1000) == 0 {
+                    println!("Training = {:.2} %", 100.0 * i as f64 / x_train.len() as f64);
+                }
+        
+                let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_train[i].clone());
+                let lo : na::DMatrix::<f64> = self.forward(li.clone());
+        
+                let mut y = na::DMatrix::from_element(1, self._topology[self._topology.len() - 1], 0.);
+                y[(0, y_train[i].clone() as usize)] = 1.0;
+        
+                self.backward(lo.clone(), y.clone());
+            }
+
+
         }
     }
 
