@@ -58,6 +58,27 @@ fn query_vec(query : &str, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
 
 
 
+fn query_vec_i64_f64(query : &str, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
+    let url = "postgresql://postgres:postgres@localhost:5432/postgres";
+    let mut conn = Client::connect(url, NoTls).unwrap();
+
+    for row in conn.query(query, &[])? {
+        let mut v : Vec<i64> = Vec::new();
+        for i in 0..row.len() {
+            v.push(row.get(i));
+        }
+        let mut v1 : Vec<f64> = Vec::new();
+        for i in 0..v.len(){
+            v1.push(v[i] as f64);
+        }
+        data.push(v1);
+    }
+    Ok(())
+}
+
+
+
+
 
 
 fn query_vec_range(query : &str, i1 : usize, i2 : usize, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
@@ -291,7 +312,7 @@ fn neural_network_mnist(topology : Vec<usize>) {
 
 
     let mut data_x: Vec<Vec<f64>> = vec![];
-    query_vec(&query_x, &mut data_x);
+    query_vec_i64_f64(&query_x, &mut data_x);
 
     let mut data_y: Vec<Vec<f64>> = vec![];
     query_vec(&query_y, &mut data_y);
