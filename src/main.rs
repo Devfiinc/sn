@@ -406,7 +406,7 @@ fn neural_network_mnist(topology : Vec<usize>) {
     /*nna.enable_dp(true, 0.01, 1.0);*/
 
     //nna.train(x_train, y_train, x_cv, y_cv, 5, 1, 1, 1);
-    nna.train(x_train.clone(), y_train.clone(), x_cv.clone(), y_cv.clone(), 5, 1, 1, 1);
+    nna.train(x_train.clone(), y_train.clone(), x_cv.clone(), y_cv.clone(), 10, 1, 1, 1);
     //nna.test(x_test, y_test);
 }
 
