@@ -8,14 +8,20 @@ pub struct NNLayer {
     // Layer definition
     _input_size : usize,
     _output_size : usize,
-    _learning_rate : f64,
+    _layer_type : String,
     _f_act : String,
+    _learning_rate : f64,
+
+    // Convolution
+    _stride : usize,
+    _kern : usize,
 
     // Layer weights and values
     _weights : na::DMatrix::<f64>,
     _qvalues : na::DMatrix::<f64>,
     _qvaluesu : na::DMatrix::<f64>, 
     _input : na::DMatrix::<f64>,
+    _input_conv2d : Vec<na::DMatrix::<f64>>,
 
     // Differential privacy
     _dp : bool,
@@ -38,12 +44,17 @@ pub struct NNLayer {
 
 impl NNLayer {
     // Construct NNLayer
-    pub fn new(input_size : usize, output_size : usize, f_act : String, learning_rate : f64, debug : bool) -> NNLayer {
+    pub fn new(input_size : usize, output_size : usize, layer_type : String, f_act : String, learning_rate : f64, debug : bool) -> NNLayer {
         let nnlayer = NNLayer {
             _input_size : input_size,
             _output_size : output_size,
+            _layer_type : layer_type,
             _f_act : f_act,
             _learning_rate : learning_rate,
+
+            // Kernel
+            _kern : input_size,
+            _stride : output_size,
 
             _dp : false,
             _epsilon : 1.0,
@@ -55,6 +66,7 @@ impl NNLayer {
             _qvalues : na::DMatrix::from_element(1, input_size /*+ 1*/, 0.),
             _qvaluesu : na::DMatrix::from_element(1, input_size /*+ 1*/, 0.), 
             _input : na::DMatrix::from_element(1, input_size /*+ 1*/, 0.),
+            _input_conv2d : Vec<na::DMatrix>,
         
             //Adam Optimizer
             _m : na::DMatrix::from_element(input_size, output_size, 0.), 
@@ -66,6 +78,10 @@ impl NNLayer {
         
             _debug : debug
         };
+        
+        //if layer_type == "Conv2D" {
+        //    nnlayer._weights = na::DMatrix::from_fn(input_size, output_size, |_r,_c| {rand::random::<f64>() - 0.5});
+        //}
 
         return nnlayer;
     }
@@ -90,23 +106,10 @@ impl NNLayer {
         self._debug = debug;
     }
 
-    pub fn forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-
-        /*
-        let mut input_with_bias = na::DMatrix::from_element(1, input.ncols() + 1, 0.);
-
-        for i in 0..input.ncols() {
-            input_with_bias[(0,i+1)] = input[(0,i)];
-        }
-        input_with_bias[(0,0)] = 1.0;
-
-        self._input = input_with_bias.clone();
-        */
+    pub fn forward_dense(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
 
         self._input = input.clone();
 
-        //println!("input with bias {} {}", input_with_bias.nrows(), input_with_bias.transpose().ncols());
-        //println!("weights          {} {}", self._weights.nrows(), self._weights.ncols());
         self._qvalues = self._input.clone() * self._weights.clone();
         self._qvaluesu = self._qvalues.clone();
     
@@ -121,14 +124,70 @@ impl NNLayer {
         }
         else if self._f_act == String::from("softmax") {
             self._qvalues = fact::softmax(self._qvalues.clone());
-            //self._qvalues = self._qvalues.map(|x| fact::softmax(x));
         }
         else {
             self._qvalues = self._qvalues.map(|x| fact::linear(x));
         }
         
-        //println!("qvalues         {} {}", self._qvalues.nrows(), self._qvalues.ncols());
         return self._qvalues.clone();
+    }
+
+    pub fn forward_conv2d(&mut self, input : na::DMatrix::<f64>, 
+                                      bias : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+
+        self._input = input.clone();
+
+        for x in input {
+            self._input_conv2d.push(x.clone());
+        }
+        
+        let k_r = kernel[0].nrows();
+        let k_c = kernel[0].ncols();
+        let k   = kernel.len();
+
+        let i_r = input[0].nrows();
+        let i_c = input[0].ncols();
+
+        let out_dim = int((i_c - k)/s) + 1;
+
+
+        let out = na::DMatrix::from_element(1, input_size /*+ 1*/, 0.),
+
+
+        self._qvalues = self._input.clone() * self._weights.clone();
+        self._qvaluesu = self._qvalues.clone();
+
+
+
+
+
+    
+        if self._f_act == String::from("relu") {
+            self._qvalues = self._qvalues.map(|x| fact::relu(x));
+        }
+        else if self._f_act == String::from("sigmoid") {
+            self._qvalues = self._qvalues.map(|x| fact::sigmoid(x));
+        }
+        else if self._f_act == String::from("tanh") {
+            self._qvalues = self._qvalues.map(|x| fact::tanh(x));
+        }
+        else if self._f_act == String::from("softmax") {
+            self._qvalues = fact::softmax(self._qvalues.clone());
+        }
+        else {
+            self._qvalues = self._qvalues.map(|x| fact::linear(x));
+        }
+        
+        return self._qvalues.clone();
+    }
+
+    pub fn forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+        forward_dense(input)
+
+        //forward_conv2d(input)
+
+
+
     }
 
 
