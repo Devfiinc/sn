@@ -166,37 +166,22 @@ impl NNLayer {
     }
 
 
-    pub fn conv2d_backward(&mut self, gradient_from_above : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-        let mut adjusted_mul = gradient_from_above.clone();
+    pub fn conv2d_backward(&mut self, grad : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
 
-        let mut qvalues_temp = self._qvaluesu.clone();
-
-        if self._f_act == String::from("relu") {
-            qvalues_temp = qvalues_temp.map(|x| fact::relu_derivative(x));
+        for i in (0..(self._input.nrows() - self._kern)).step_by(self._stride) {
+            for j in (0..(self._input.ncols() - self._kern)).step_by(self._stride) {
+                for ki in 0..self._kern {
+                    for kj in 0..self._kern {
+                        if (i + ki) < self._input.nrows() && (j + kj) < self._input.ncols() {
+                            let gi = (i as f64 / self._stride as f64) as usize;
+                            let gj = (j as f64 / self._stride as f64) as usize;
+                            self._weights[(ki,kj)] -= self._learning_rate * grad[(gi,gj)] * self._input[(i+ki,j+kj)];
+                        }
+                    }
+                }
+                self._qvaluesu[(i,j)] = out;
+            }
         }
-        else if self._f_act == String::from("sigmoid") {
-            qvalues_temp = qvalues_temp.map(|x| fact::sigmoid_derivative(x));
-        }
-        else if self._f_act == String::from("tanh") {
-            qvalues_temp = qvalues_temp.map(|x| fact::tanh_derivative(x));
-        }
-        else if self._f_act == String::from("softmax") {
-            qvalues_temp = fact::softmax_derivative(qvalues_temp.clone());
-            //self._qvalues = self._qvalues.map(|x| fact::softmax(x));
-        }
-        else {
-            qvalues_temp = qvalues_temp.map(|x| fact::linear_derivative(x));
-        }
-
-        for i in 0..adjusted_mul.ncols() {
-            adjusted_mul[(0,i)] = qvalues_temp[(0,i)] * gradient_from_above[(0,i)];
-        }
-
-        let delta_i = &adjusted_mul * self._weights.transpose();
-
-        let d_i = self._input.transpose() * adjusted_mul;
-
-        self.update_weights(d_i.clone());
 
         return delta_i;
     }
