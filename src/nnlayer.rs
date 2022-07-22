@@ -21,7 +21,6 @@ pub struct NNLayer {
     _qvalues : na::DMatrix::<f64>,
     _qvaluesu : na::DMatrix::<f64>, 
     _input : na::DMatrix::<f64>,
-    _input_conv2d : Vec<na::DMatrix::<f64>>,
 
     // Differential privacy
     _dp : bool,
@@ -66,7 +65,6 @@ impl NNLayer {
             _qvalues : na::DMatrix::from_element(1, input_size /*+ 1*/, 0.),
             _qvaluesu : na::DMatrix::from_element(1, input_size /*+ 1*/, 0.), 
             _input : na::DMatrix::from_element(1, input_size /*+ 1*/, 0.),
-            _input_conv2d : Vec<na::DMatrix>,
         
             //Adam Optimizer
             _m : na::DMatrix::from_element(input_size, output_size, 0.), 
@@ -106,7 +104,198 @@ impl NNLayer {
         self._debug = debug;
     }
 
-    pub fn forward_dense(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+
+
+
+
+
+
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - -
+    // Convolutional Layer
+    // - - - - - - - - - - - - - - - - - - - - - - - -
+
+    pub fn conv2d_output_size(&self, input_shape : (usize, usize), stride : usize, padding : usize, kern : usize) -> (usize, usize) {
+        let (input_rows, input_cols) = input_shape;
+        let output_rows = ((input_rows - self._kern + 2 * padding) / self._stride) + 1;
+        let output_cols = ((input_cols - self._kern + 2 * padding) / self._stride) + 1;
+        return (output_rows, output_cols);
+    }
+
+
+    pub fn conv2d_forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+
+        self._input = input.clone();
+
+        let out_size = self.conv2d_output_size(input.shape(), self._stride, 0, self._kern);
+        self._qvaluesu = na::DMatrix::from_element(out_size.0, out_size.1, 0.);
+
+        for i in (0..(self._input.nrows() - self._kern)).step_by(self._stride) {
+            for j in (0..(self._input.ncols() - self._kern)).step_by(self._stride) {
+                let mut out = 0.0;
+                for ki in 0..self._kern {
+                    for kj in 0..self._kern {
+                        if (i + ki) < self._input.nrows() && (j + kj) < self._input.ncols() {
+                            out += self._input[(i + ki, j + kj)] * self._weights[(ki, kj)];
+                        }
+                    }
+                }
+                self._qvaluesu[(i,j)] = out;
+            }
+        }
+
+    
+        if self._f_act == String::from("relu") {
+            self._qvalues = self._qvaluesu.map(|x| fact::relu(x));
+        }
+        else if self._f_act == String::from("sigmoid") {
+            self._qvalues = self._qvaluesu.map(|x| fact::sigmoid(x));
+        }
+        else if self._f_act == String::from("tanh") {
+            self._qvalues = self._qvaluesu.map(|x| fact::tanh(x));
+        }
+        else if self._f_act == String::from("softmax") {
+            self._qvalues = fact::softmax(self._qvaluesu.clone());
+        }
+        else {
+            self._qvalues = self._qvaluesu.map(|x| fact::linear(x));
+        }
+        
+        return self._qvalues.clone();
+    }
+
+
+    pub fn conv2d_backward(&mut self, gradient_from_above : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+        let mut adjusted_mul = gradient_from_above.clone();
+
+        let mut qvalues_temp = self._qvaluesu.clone();
+
+        if self._f_act == String::from("relu") {
+            qvalues_temp = qvalues_temp.map(|x| fact::relu_derivative(x));
+        }
+        else if self._f_act == String::from("sigmoid") {
+            qvalues_temp = qvalues_temp.map(|x| fact::sigmoid_derivative(x));
+        }
+        else if self._f_act == String::from("tanh") {
+            qvalues_temp = qvalues_temp.map(|x| fact::tanh_derivative(x));
+        }
+        else if self._f_act == String::from("softmax") {
+            qvalues_temp = fact::softmax_derivative(qvalues_temp.clone());
+            //self._qvalues = self._qvalues.map(|x| fact::softmax(x));
+        }
+        else {
+            qvalues_temp = qvalues_temp.map(|x| fact::linear_derivative(x));
+        }
+
+        for i in 0..adjusted_mul.ncols() {
+            adjusted_mul[(0,i)] = qvalues_temp[(0,i)] * gradient_from_above[(0,i)];
+        }
+
+        let delta_i = &adjusted_mul * self._weights.transpose();
+
+        let d_i = self._input.transpose() * adjusted_mul;
+
+        self.update_weights(d_i.clone());
+
+        return delta_i;
+    }
+
+
+
+
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - -
+    // Max Pooling Layer
+    // - - - - - - - - - - - - - - - - - - - - - - - -
+
+    pub fn max_pooling_output_size(&self, input_shape : (usize, usize), stride : usize, padding : usize) -> (usize, usize) {
+        let (input_rows, input_cols) = input_shape;
+
+        let output_rows = ((input_rows as f64 - self._kern as f64).floor() / self._stride as f64) + 1.0;
+        let output_cols = ((input_cols as f64 - self._kern as f64).floor() / self._stride as f64) + 1.0;
+
+        return (output_rows as usize, output_cols as usize);
+    }
+
+
+
+    pub fn max_pooling_forward(&mut self, input : na::DMatrix::<f64>, f : usize, s : usize) -> na::DMatrix::<f64> {
+        self._input = input.clone();
+
+        let out_size = self.max_pooling_output_size(input.shape(), f, s);
+        self._qvaluesu = na::DMatrix::from_element(out_size.0, out_size.1, 0.);
+        
+        for i in (0..(self._input.nrows() - f)).step_by(s) {
+            for j in (0..(self._input.ncols() - f)).step_by(s) {
+                let mut max = 0.0;
+                for ki in 0..f {
+                    for kj in 0..f {
+                        if (i + ki) < self._input.nrows() && (j + kj) < self._input.ncols() {
+                            if self._input[(i + ki, j + kj)] > max {
+                                max = self._input[(i + ki, j + kj)];
+                            }
+                        }
+                    }
+                }
+                self._qvaluesu[(i,j)] = max;
+            }
+        }
+        return self._qvaluesu.clone();
+    }
+
+
+
+    pub fn max_pooling_backward(&mut self, gradient_from_above : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+        let mut adjusted_mul = gradient_from_above.clone();
+
+        let mut qvalues_temp = self._qvaluesu.clone();
+
+        if self._f_act == String::from("relu") {
+            qvalues_temp = qvalues_temp.map(|x| fact::relu_derivative(x));
+        }
+        else if self._f_act == String::from("sigmoid") {
+            qvalues_temp = qvalues_temp.map(|x| fact::sigmoid_derivative(x));
+        }
+        else if self._f_act == String::from("tanh") {
+            qvalues_temp = qvalues_temp.map(|x| fact::tanh_derivative(x));
+        }
+        else if self._f_act == String::from("softmax") {
+            qvalues_temp = fact::softmax_derivative(qvalues_temp.clone());
+            //self._qvalues = self._qvalues.map(|x| fact::softmax(x));
+        }
+        else {
+            qvalues_temp = qvalues_temp.map(|x| fact::linear_derivative(x));
+        }
+
+        for i in 0..adjusted_mul.ncols() {
+            adjusted_mul[(0,i)] = qvalues_temp[(0,i)] * gradient_from_above[(0,i)];
+        }
+
+        let delta_i = &adjusted_mul * self._weights.transpose();
+
+        let d_i = self._input.transpose() * adjusted_mul;
+
+        self.update_weights(d_i.clone());
+
+        return delta_i;
+    }
+
+
+
+
+
+
+
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - -
+    // Dense Layer
+    // - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+    pub fn dense_forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
 
         self._input = input.clone();
 
@@ -132,63 +321,88 @@ impl NNLayer {
         return self._qvalues.clone();
     }
 
-    pub fn forward_conv2d(&mut self, input : na::DMatrix::<f64>, 
-                                      bias : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-
-        self._input = input.clone();
-
-        for x in input {
-            self._input_conv2d.push(x.clone());
-        }
-        
-        let k_r = kernel[0].nrows();
-        let k_c = kernel[0].ncols();
-        let k   = kernel.len();
-
-        let i_r = input[0].nrows();
-        let i_c = input[0].ncols();
-
-        let out_dim = int((i_c - k)/s) + 1;
 
 
-        let out = na::DMatrix::from_element(1, input_size /*+ 1*/, 0.),
+    pub fn dense_backward(&mut self, gradient_from_above : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+        let mut adjusted_mul = gradient_from_above.clone();
 
+        let mut qvalues_temp = self._qvaluesu.clone();
 
-        self._qvalues = self._input.clone() * self._weights.clone();
-        self._qvaluesu = self._qvalues.clone();
-
-
-
-
-
-    
         if self._f_act == String::from("relu") {
-            self._qvalues = self._qvalues.map(|x| fact::relu(x));
+            qvalues_temp = qvalues_temp.map(|x| fact::relu_derivative(x));
         }
         else if self._f_act == String::from("sigmoid") {
-            self._qvalues = self._qvalues.map(|x| fact::sigmoid(x));
+            qvalues_temp = qvalues_temp.map(|x| fact::sigmoid_derivative(x));
         }
         else if self._f_act == String::from("tanh") {
-            self._qvalues = self._qvalues.map(|x| fact::tanh(x));
+            qvalues_temp = qvalues_temp.map(|x| fact::tanh_derivative(x));
         }
         else if self._f_act == String::from("softmax") {
-            self._qvalues = fact::softmax(self._qvalues.clone());
+            qvalues_temp = fact::softmax_derivative(qvalues_temp.clone());
+            //self._qvalues = self._qvalues.map(|x| fact::softmax(x));
         }
         else {
-            self._qvalues = self._qvalues.map(|x| fact::linear(x));
+            qvalues_temp = qvalues_temp.map(|x| fact::linear_derivative(x));
         }
-        
-        return self._qvalues.clone();
+
+        for i in 0..adjusted_mul.ncols() {
+            adjusted_mul[(0,i)] = qvalues_temp[(0,i)] * gradient_from_above[(0,i)];
+        }
+
+        let delta_i = &adjusted_mul * self._weights.transpose();
+
+        let d_i = self._input.transpose() * adjusted_mul;
+
+        self.update_weights(d_i.clone());
+
+        return delta_i;
     }
+
+
+
+
+
+
+
+
 
     pub fn forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-        forward_dense(input)
-
-        //forward_conv2d(input)
-
-
-
+        if self._layer_type == "dense".to_string() {
+            return self.dense_forward(input);
+        }
+        else if self._layer_type == "conv2d".to_string() {
+            return self.conv2d_forward(input);
+        }
+        else if self._layer_type == "max_pooling".to_string() {
+            return self.max_pooling_forward(input, self._kern, self._stride);
+        }
+        else {
+            panic!("Unknown layer type");
+        }
     }
+
+    pub fn backward(&mut self, gradient_from_above : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+        if self._layer_type == "dense".to_string() {
+            return self.dense_backward(gradient_from_above);
+        }
+        else if self._layer_type == "conv2d".to_string() {
+            return self.conv2d_backward(gradient_from_above);
+        }
+        else if self._layer_type == "max_pooling".to_string() {
+            return self.max_pooling_backward(gradient_from_above);
+        }
+        else {
+            panic!("Unknown layer type");
+        }
+    }
+
+
+
+
+
+
+
+
 
 
     pub fn update_weights(&mut self, gradient : na::DMatrix::<f64>) {
@@ -240,78 +454,6 @@ impl NNLayer {
     }
 
 
-    pub fn backward(&mut self, gradient_from_above : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-        let mut adjusted_mul = gradient_from_above.clone();
-
-        let mut qvalues_temp = self._qvaluesu.clone();
-
-
-        if self._f_act == String::from("relu") {
-            qvalues_temp = qvalues_temp.map(|x| fact::relu_derivative(x));
-        }
-        else if self._f_act == String::from("sigmoid") {
-            qvalues_temp = qvalues_temp.map(|x| fact::sigmoid_derivative(x));
-        }
-        else if self._f_act == String::from("tanh") {
-            qvalues_temp = qvalues_temp.map(|x| fact::tanh_derivative(x));
-        }
-        else if self._f_act == String::from("softmax") {
-            qvalues_temp = fact::softmax_derivative(qvalues_temp.clone());
-            //self._qvalues = self._qvalues.map(|x| fact::softmax(x));
-        }
-        else {
-            qvalues_temp = qvalues_temp.map(|x| fact::linear_derivative(x));
-        }
-
-        /*
-        println!("qvalues_temp {:?}", qvalues_temp);
-        println!("");
-
-        println!("self._input shape {:?}", self._input.shape());
-        println!("");
-
-        println!("qvalues_temp shape {:?}", qvalues_temp.shape());
-        println!("");
-
-        println!("adjusted_mul shape {:?}", adjusted_mul.shape());
-        println!("");
-
-        println!("gradient_from_above shape {:?}", gradient_from_above.shape());
-        println!("");
-
-        println!("self._weights shape {:?}", self._weights.shape());
-        println!("");
-        */
-
-        for i in 0..adjusted_mul.ncols() {
-            adjusted_mul[(0,i)] = qvalues_temp[(0,i)] * gradient_from_above[(0,i)];
-        }
-
-        //println!("adjusted_mul {:?}", adjusted_mul);
-        //println!("");
-
-        let delta_i = &adjusted_mul * self._weights.transpose();
-
-        //println!("delta_i {:?}", delta_i);
-        //println!("");
-        
-        //println!("delta_i {} {}", delta_i.nrows(), delta_i.ncols());
-        let d_i = self._input.transpose() * adjusted_mul;
-
-        //let mut d_i = na::DMatrix::from_element(self._input.ncols(), adjusted_mul.ncols(), 0.);
-        //for i in 0..self._input.nrows() {
-        //    for j in 0..adjusted_mul.nrows() {
-        //        d_i[(i,j)] = self._input[(i,0)] * adjusted_mul[(j,0)];
-        //    }
-        //}
-
-        //println!("d_i {:?}", d_i);
-        //println!("");
-
-        self.update_weights(d_i.clone());
-
-        return delta_i;
-    }
 
 
 
