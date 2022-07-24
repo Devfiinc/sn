@@ -195,7 +195,35 @@ fn split_dataset_xy(dx      : Vec<Vec<f64>>,      dy      : Vec<Vec<f64>>,
         }
         i = i + 1;
     }
-    
+}
+
+
+
+fn split_dataset_xy_mdim(dx      : Vec<Vec<f64>>,      dy      : Vec<Vec<f64>>,
+                         x_train : &mut Vec<Vec<f64>>, y_train : &mut Vec<Vec<f64>>,
+                         x_cv    : &mut Vec<Vec<f64>>, y_cv    : &mut Vec<Vec<f64>>,
+                         x_test  : &mut Vec<Vec<f64>>, y_test  : &mut Vec<Vec<f64>>) {
+
+    let mut _size_train = 0.70;
+    let mut _size_cv = 0.15;
+    let mut _size_test = 0.15;
+                    
+    let mut i : i64 = 0;
+    let split_train : i64 = (dx.len() as f64 * _size_train) as i64;
+    let split_cv : i64 = (dx.len() as f64 * (_size_train + _size_cv)) as i64;
+    for n in 0..dx.len() {
+        if i < split_train {
+            x_train.push(dx[n].clone());
+            y_train.push(dy[n].clone());
+        } else if i < split_cv {
+            x_cv.push(dx[n].clone());
+            y_cv.push(dy[n].clone());
+        } else {
+            x_test.push(dx[n].clone());
+            y_test.push(dy[n].clone());
+        }
+        i = i + 1;
+    }
 }
 
 
@@ -329,7 +357,8 @@ fn neural_network(db : &str, topology : Vec<usize>) {
 
     let learning_rate = 0.005;
 
-    let mut nna = nn::NN::new(_topology,
+    let mut nna = nn::NN::new(vec!["dense".to_string()],
+                              _topology,
                               _facts, 
                               learning_rate, 
                               false);
@@ -346,8 +375,11 @@ fn neural_network(db : &str, topology : Vec<usize>) {
 
 fn neural_network_mnist(topology : Vec<usize>) {
 
-    let mut query_x = String::from("SELECT image from mnist");
-    let mut query_y = String::from("SELECT label from mnist");
+    //let mut query_x = String::from("SELECT image FROM mnist WHERE label = 0 OR label = 1");
+    //let mut query_y = String::from("SELECT label FROM mnist WHERE label = 0 OR label = 1");
+
+    let mut query_x = String::from("SELECT image FROM mnist LIMIT 10000");
+    let mut query_y = String::from("SELECT label FROM mnist LIMIT 10000");
 
 
     let mut data_x: Vec<Vec<f64>> = vec![];
@@ -357,6 +389,7 @@ fn neural_network_mnist(topology : Vec<usize>) {
     let mut data_y: Vec<Vec<f64>> = vec![];
     query_labels(&query_y, &mut data_y);
 
+    //println!("{}", data_x.len());
 
     let _epsilon = 1.0;
     let _noise_scale = 1.0;
@@ -398,7 +431,8 @@ fn neural_network_mnist(topology : Vec<usize>) {
 
     let learning_rate = 0.001;
 
-    let mut nna = nn::NN::new(_topology,
+    let mut nna = nn::NN::new(vec!["conv2d".to_string()],
+                              _topology,
                               _facts, 
                               learning_rate, 
                               false);
@@ -413,8 +447,8 @@ fn neural_network_mnist(topology : Vec<usize>) {
 
 fn neural_network_nerves(topology : Vec<usize>) {
 
-    let mut query_x = String::from("SELECT imx from nerves");
-    let mut query_y = String::from("SELECT imy from nerves");
+    let mut query_x = String::from("SELECT imx from nerves LIMIT 10");
+    let mut query_y = String::from("SELECT imy from nerves LIMIT 10");
 
 
     let mut data_x: Vec<Vec<f64>> = vec![];
@@ -442,13 +476,13 @@ fn neural_network_nerves(topology : Vec<usize>) {
 
     // Split dataset into train, cross validation and test
     let mut x_train : Vec<Vec<f64>> = vec![];
-    let mut y_train : Vec<f64> = vec![];
-    let mut x_cv : Vec<Vec<f64>> = vec![];
-    let mut y_cv : Vec<f64> = vec![];
-    let mut x_test : Vec<Vec<f64>> = vec![];
-    let mut y_test : Vec<f64> = vec![];
+    let mut y_train : Vec<Vec<f64>> = vec![];
+    let mut x_cv    : Vec<Vec<f64>> = vec![];
+    let mut y_cv    : Vec<Vec<f64>> = vec![];
+    let mut x_test  : Vec<Vec<f64>> = vec![];
+    let mut y_test  : Vec<Vec<f64>> = vec![];
 
-    split_dataset_xy(data_x, data_y, &mut x_train, &mut y_train, &mut x_cv, &mut y_cv, &mut x_test, &mut y_test);
+    split_dataset_xy_mdim(data_x, data_y, &mut x_train, &mut y_train, &mut x_cv, &mut y_cv, &mut x_test, &mut y_test);
 
 
     let mut _topology : Vec<usize> = vec![x_train[0].len()];
@@ -465,7 +499,8 @@ fn neural_network_nerves(topology : Vec<usize>) {
 
     let learning_rate = 0.001;
 
-    let mut nna = nn::NN::new(_topology,
+    let mut nna = nn::NN::new(vec!["conv2d".to_string()],
+                              _topology,
                               _facts, 
                               learning_rate, 
                               false);
@@ -473,7 +508,7 @@ fn neural_network_nerves(topology : Vec<usize>) {
     /*nna.enable_dp(true, 0.01, 1.0);*/
 
     //nna.train(x_train, y_train, x_cv, y_cv, 5, 1, 1, 1);
-    nna.train(x_train.clone(), y_train.clone(), x_train.clone(), y_train.clone(), 5, 1, 1, 1);
+    nna.train_mdim(x_train.clone(), y_train.clone(), x_train.clone(), y_train.clone(), 5, 1, 1, 1);
     //nna.test(x_test, y_test);
 }
 
@@ -485,7 +520,7 @@ fn neural_network_nerves(topology : Vec<usize>) {
 
 fn main() -> Result<(), Error> {
 
-    let opt : usize = 5;
+    let opt : usize = 6;
 
     if opt == 1{    /*Done*/
 
@@ -508,8 +543,7 @@ fn main() -> Result<(), Error> {
         neural_network("nki", vec![25,25,10]);
 
     } else if opt == 5 {
-
-        println!("Neural Network - Classifier - Image data");
+        println!("Neural Network - Classifier - Image data - MNist");
         neural_network_mnist(vec![128,64,10]);
 
     } else if opt == 6 {
@@ -518,95 +552,6 @@ fn main() -> Result<(), Error> {
         neural_network_nerves(vec![128,64,10]);
 
     }
-
-
-    /*
-    let _epsilon = 3.0;
-    let _noise_scale = 0.01;
-    let _data_norm = 7.89;
-
-    let epochs = 1000;
-    let batch = 50;
-    let nfeat = 4;
-    let nclass = 3;
-
-    // Read from Postgres database, same as spi does from within PGX
-    // Data into VecVec<Option<f64>>>
-
-    let url = "postgresql://postgres:postgres@localhost:5432/postgres";
-    let mut conn = Client::connect(url, NoTls).unwrap();
-
-    let mut sn : VecVec64 = vec![];
-
-    for row in conn.query("SELECT * from iris", &[])? {
-        sn.push(vec![row.get(0),
-                     row.get(1),
-                     row.get(2),
-                     row.get(3),
-                     row.get(4)]);
-    }
-    
-    
-    // Shuffle input
-    sn.shuffle(&mut thread_rng());
-
-    // Split dataset into train, cross validation and test
-    let mut x_train : VecVec64 = vec![];
-    let mut y_train : Vec<Option<f64>> = vec![];
-    let mut x_cv : VecVec64 = vec![];
-    let mut y_cv : Vec<Option<f64>> = vec![];
-    let mut x_test : VecVec64 = vec![];
-    let mut y_test : Vec<Option<f64>> = vec![];
-
-    let mut size_cv = 0.00;
-    let mut size_test = 0.00;
-    let mut size_train = 1.0 - size_cv - size_test;
-
-    let mut i : i64 = 0;
-    let split_train : i64 = (sn.len() as f64 * size_train) as i64;
-    let split_cv : i64 = (sn.len() as f64 * (size_train + size_cv)) as i64;
-    for n in sn {
-        if i < split_train {
-            x_train.push(n[0..nfeat].to_vec());
-            y_train.push(n[nfeat].clone());
-        } else if i < split_cv {
-            x_cv.push(n[0..nfeat].to_vec());
-            y_cv.push(n[nfeat].clone());
-        } else {
-            x_test.push(n[0..nfeat].to_vec());
-            y_test.push(n[nfeat].clone());
-        }
-        i = i + 1;
-    }
-
-
-
-    let mut lr = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.01, 0.001, false);
-
-    lr.fit(x_train.clone(), y_train.clone(), epochs as usize, batch as usize);
-    lr.test(x_train.clone(), y_train.clone());
-    let loss1 = lr.get_loss();
-
-    lr.reset();
-
-    lr.enable_dp(true, _epsilon, _noise_scale, _data_norm);
-    lr.fit(x_train.clone(), y_train.clone(), epochs_dp as usize, batch_dp as usize);
-    lr.test(x_train.clone(), y_train.clone());
-    let loss2 = lr.get_loss();
-    */
-
-    /*
-    let mut lr = lr::LogisticRegression::new(epochs, batch, nfeat, nclass, 0.1, 0.01, false);
-    lr.enable_dp(true, 1.0, 0.01, 1.0);
-
-    lr.fit(x_train.clone(), y_train.clone());
-    lr.test(x_train.clone(), y_train.clone());
-    */
-
-
-
-
-
 
     Ok(())
 }   

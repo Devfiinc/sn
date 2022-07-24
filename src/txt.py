@@ -1,31 +1,52 @@
 
-def convolution(image, filt, bias, s=1):
-    '''
-    Confolves `filt` over `image` using stride `s`
-    '''
-    (n_f, n_c_f, f, _) = filt.shape # filter dimensions
-    n_c, in_dim, _ = image.shape # image dimensions
+import numpy as np
+
+
+inputs = np.array([[3, 3, 3, 6],
+                   [7, 4, 3, 2],
+                   [7, 2, 8, 5],
+                   [1, 7, 3, 1]])
+
+kernel = np.array([[1, 2, 4], 
+                   [1, 1, 3], 
+                   [1, 2, 4]])
+
+
+def convolution_matrix(m, k):
+    mr, mc = len(m), len(m[0]) # matrix rows, cols
+    kr, kc = len(k), len(k[0]) # kernel rows, cols
+
+    padding = 0
+    stride = 1
+
+    fr = int(((mr - kr + 2.0 * padding) / stride) + 1);
+    fc = int(((mc - kc + 2.0 * padding) / stride) + 1);
+
+    cmat = np.zeros((fr*fc, mr*mc))
+
+
+    d1 = 0
+    d2 = 0
+    for i in range(len(cmat)):
+        if i%fc == 0 and i > 0:
+            d1 += 1
+            d2 = 0
+
+        for r in range(kr):
+            for c in range(kc):
+                cmat[i][d1*mc + d2 + r*mc + c] = k[r][c]
+        d2 += 1
+
+    print(cmat)
     
-    out_dim = int((in_dim - f)/s)+1 # calculate output dimensions
-    
-    # ensure that the filter dimensions match the dimensions of the input image
-    assert n_c == n_c_f, "Dimensions of filter must match dimensions of input image"
-    
-    out = np.zeros((n_f,out_dim,out_dim)) # create the matrix to hold the values of the convolution operation
-    
-    # convolve each filter over the image
-    for curr_f in range(n_f):
-        curr_y = out_y = 0
-        # move filter vertically across the image
-        while curr_y + f <= in_dim:
-            curr_x = out_x = 0
-            # move filter horizontally across the image 
-            while curr_x + f <= in_dim:
-                # perform the convolution operation and add the bias
-                out[curr_f, out_y, out_x] = np.sum(filt[curr_f] * image[:,curr_y:curr_y+f, curr_x:curr_x+f]) + bias[curr_f]
-                curr_x += s
-                out_x += 1
-            curr_y += s
-            out_y += 1
-        
-    return out
+
+#convolution_matrix(inputs, kernel)
+
+
+dims = (4, 4)
+
+def tupleman(dim = (0,0)):
+    print(dim[0])
+
+tupleman()
+tupleman(dims)

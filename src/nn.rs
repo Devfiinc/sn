@@ -6,10 +6,12 @@ extern crate nalgebra as na;
 
 pub struct NN {
     // NN definition
+    _layers : Vec<String>,
     _topology : Vec<usize>,
     _activation_functions : Vec<String>,
     _learning_rate : f64,
     _model : Vec<nnlayer::NNLayer>,
+    _concatenations : Vec<usize>,
 
     // Differential privacy
     _dp : bool,
@@ -21,12 +23,14 @@ pub struct NN {
 
 impl NN {
     // Construct NN
-    pub fn new(topology : Vec<usize>, activation_functions : Vec<String>, learning_rate : f64, debug : bool) -> NN{
+    pub fn new(layers : Vec<String>, topology : Vec<usize>, activation_functions : Vec<String>, learning_rate : f64, debug : bool) -> NN{
         let mut nn = NN {
+            _layers : layers.clone(),
             _topology : topology.clone(),
             _activation_functions : activation_functions.clone(),
             _learning_rate : learning_rate,
             _model : vec![],
+            _concatenations : vec![],
 
             _dp : false,
             _noise_scale : 0.0,
@@ -35,9 +39,70 @@ impl NN {
             _debug : debug
         };
 
-        for i in 0..topology.len() - 1 {
-            let fact = activation_functions[i].clone();
-            nn._model.push(nnlayer::NNLayer::new(topology[i] /*+ 1*/, topology[i+1], fact, learning_rate, debug));            
+        let layer_type = layers[0].clone();
+
+        if layers[0] == "dense".to_string() {
+            for i in 0..topology.len() - 1 {
+                let fact = activation_functions[i].clone();
+                nn._model.push(nnlayer::NNLayer::new(layer_type.clone(), vec![1, topology[i], 1], vec![1, topology[i+1], 1], fact, learning_rate));    
+                println!("--------------------------------------------------------------------------------");
+                println!("  Layer {}: {} with topology {} - {}", i, layer_type.clone(), topology[i], topology[i+1]);
+            }
+            println!("--------------------------------------------------------------------------------");
+        } else {    //CNN
+            //nn._model.push(nnlayer::NNLayer::new("reshape".to_string(), vec![1, 1, 784],     vec![1, 28, 28],     "sigmoid".to_string(), learning_rate));
+            //nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),  vec![1, 28, 28],     vec![5, 3, 1, 0],    "sigmoid".to_string(), learning_rate));
+            //nn._model.push(nnlayer::NNLayer::new("reshape".to_string(), vec![5, 26, 26],     vec![1, 1, 5*26*26], "sigmoid".to_string(), learning_rate));
+            //nn._model.push(nnlayer::NNLayer::new("dense".to_string(),   vec![1, 5*26*26, 1], vec![1, 100, 1],     "sigmoid".to_string(), learning_rate));
+            //nn._model.push(nnlayer::NNLayer::new("dense".to_string(),   vec![1, 100, 1],     vec![1, 10, 1],       "sigmoid".to_string(), learning_rate));
+
+
+            // Im size = 96 x 96
+            
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![32, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![32, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![1, 28, 28],     vec![32, 2, 1, 0],    "relu".to_string(), learning_rate));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![64, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![64, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![1, 28, 28],     vec![64, 2, 1, 0],    "relu".to_string(), learning_rate));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![128, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![128, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![1, 28, 28],     vec![128, 2, 1, 0],    "relu".to_string(), learning_rate));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![256, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![256, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![1, 28, 28],     vec![256, 2, 1, 0],    "relu".to_string(), learning_rate));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![512, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![512, 3, 1, 0],    "relu".to_string(), learning_rate));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2dup".to_string(),     vec![1, 28, 28],     vec![256, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![256, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![256, 3, 1, 0],    "relu".to_string(), learning_rate));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2dup".to_string(),     vec![1, 28, 28],     vec![128, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![128, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![128, 3, 1, 0],    "relu".to_string(), learning_rate));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2dup".to_string(),     vec![1, 28, 28],     vec![64, 3, 1, 0],     "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![64, 3, 1, 0],     "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![64, 3, 1, 0],     "relu".to_string(), learning_rate));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2dup".to_string(),     vec![1, 28, 28],     vec![32, 3, 1, 0],     "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![32, 3, 1, 0],     "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![32, 3, 1, 0],     "relu".to_string(), learning_rate));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![1, 1, 1, 0],     "sigmoid".to_string(), learning_rate));
+            
+
+
+            for i in 0..nn._model.len() {
+                println!("--------------------------------------------------------------------------------");
+                println!("  Layer {}: {} with topology {:?} - {:?}", i, nn._model[i].get_layer_type(), nn._model[i].get_input_size(), nn._model[i].get_output_size());
+                println!("--------------------------------------------------------------------------------");
+            }
         }
 
         return nn;
@@ -58,49 +123,66 @@ impl NN {
 
     // Forward propagation
     pub fn forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-        let mut vals = input.transpose().clone();
+        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+        //println!("     FORWARD PROPAGATION                                           ");
+        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
 
-        //println!("Vals init {} x {}", vals.nrows(), vals.ncols());
+        let mut vals : Vec<na::DMatrix::<f64>> = vec![input.transpose().clone()];
+
+        //println!("Layer 0 : ");
+        //println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
         for i in 0..self._model.len() {
-        //    println!("Layer {} of {} - vals {} x {}", i+1, self._model.len(), vals.nrows(), vals.ncols());
+            //println!("Layer {} : {}", i+1, self._model[i].get_layer_type());
             vals = self._model[i].forward(vals);
+            //println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
+
+            //println!("global forward");
+            //for a in 0..vals[0].nrows() {
+            //    for b in 0..vals[0].ncols() {
+            //        print!("{:.2} ", vals[0][(a,b)]);
+            //    }
+            //    println!("");
+            //}
+
         }
 
-        return vals;
+        return vals[0].clone();
     }
 
 
 
     // Back propagation
     pub fn backward(&mut self, output : na::DMatrix::<f64>, ytrain : na::DMatrix::<f64>) {
+        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+        //println!("     BACK PROPAGATION                                              ");
+        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
 
-        let mut n : f64 = 0.0;
+        let mut n : f64 = output.ncols() as f64;
         if output.nrows() > output.ncols() {
             n = output.nrows() as f64;
-        } else  {
-            n = output.ncols() as f64;
-        }
+        } 
 
-        let mut delta = (2.0 / n) * (output.clone() - ytrain.clone());
-
-        //println!("Output {:?}", output);
-        //println!("ytrain {:?}", ytrain);
-        //println!("");
-        //println!("");
-        //println!("delta  {:?}", delta);
-        //println!("");
-        //println!("");
-
-        //println!("Vals init {} x {}", delta.nrows(), delta.ncols());
-        //for i in (0..self._model.len() - 1).rev() {
+        let mut delta : Vec<na::DMatrix::<f64>> = vec![(2.0 / n) * (output.clone() - ytrain.clone())];
+        
+        //println!("Layer {} : ", self._model.len());
+        //println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
         for i in (0..self._model.len()).rev() {
-            //println!("{:?} of {:?}", i, self._model.len());
-            //println!("Layer {} of {} - vals {} x {}", i+1, self._model.len(), delta.nrows(), delta.ncols());
+            //println!("Layer {} : {}", i, self._model[i].get_layer_type());
             delta = self._model[i].backward(delta.clone());
-            //println!("delta {} {:?}", i, delta);
-            //println!("");
-            //println!("");
+            //println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
+
+            //println!("global backward");
+            //for a in 0..delta[0].nrows() {
+            //    for b in 0..delta[0].ncols() {
+            //        print!("{:.2} ", delta[0][(a,b)]);
+            //    }
+            //    println!("");
+            //}
+
+
         }
+
+
     }
 
 
@@ -158,6 +240,29 @@ impl NN {
     }
 
 
+    pub fn compute_accuracy_mdim(&mut self, x_val : Vec<Vec<f64>>, y_val : Vec<Vec<f64>>) -> f64 {
+        let mut v1 : usize = 0;
+        let mut v0 : usize = 0;
+
+        for i in 0..x_val.len() {
+            if (i % 100) == 0 {
+                println!("Validating = {:.2} %", 100.0 * i as f64 / x_val.len() as f64);
+            }
+
+            let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_val[i].clone());
+            let lo : na::DMatrix::<f64> = self.forward(li.clone());
+        
+            let yo = self.argmax(lo);
+            if yo == 1.0 { //y_val[i] {
+                v1 += 1;
+            }
+            v0 += 1;            
+        }
+
+        return 100.0 * (v1 as f64 / v0 as f64);
+    }
+
+
     // Train
     pub fn train(&mut self, x_train : Vec<Vec<f64>>, y_train : Vec<f64>,
                             x_val : Vec<Vec<f64>>,   y_val : Vec<f64>, 
@@ -175,15 +280,49 @@ impl NN {
                 let lo : na::DMatrix::<f64> = self.forward(li.clone());
         
                 //println!("Backward");
-                let mut y = na::DMatrix::from_element(1, self._topology[self._topology.len() - 1], 0.);
+                //let mut y = na::DMatrix::from_element(1, self._topology[self._topology.len() - 1], 0.);
+                let mut y = na::DMatrix::from_element(1, self._model[self._model.len() - 1].get_output_size()[1], 0.);
                 y[(0, y_train[i].clone() as usize)] = 1.0;
         
                 self.backward(lo.clone(), y.clone());
             }
 
-            println!("");
-            println!("Validation = {:.2} %", self.compute_accuracy(x_val.clone(), y_val.clone()));
-            println!("");
+            println!(" - ");
+            println!(" - Validation = {:.2} %", self.compute_accuracy(x_val.clone(), y_val.clone()));
+            println!(" - - - - - - - - - - - - - - - - - - - - ");
+            
+        }
+    }
+
+
+    // Train
+    pub fn train_mdim(&mut self, x_train : Vec<Vec<f64>>, y_train : Vec<Vec<f64>>,
+                            x_val : Vec<Vec<f64>>,   y_val : Vec<Vec<f64>>, 
+                            _num_episodes : i64, _max_steps : i64, _target_upd : i64, _exp_upd : i64) {
+
+        for i in 0.._num_episodes {
+            for i in 0..x_train.len() {
+                if (i % 100) == 0 {
+                    println!("Training = {:.2} %", 100.0 * i as f64 / x_train.len() as f64);
+                }
+                //println!("{:?} of {:?}", i+1, x_train.len());
+        
+                //println!("Forward");
+                let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_train[i].clone());
+                let lo : na::DMatrix::<f64> = self.forward(li.clone());
+        
+                //println!("Backward");
+                //let mut y = na::DMatrix::from_element(1, self._topology[self._topology.len() - 1], 0.);
+                //let mut y = na::DMatrix::from_element(1, self._model[self._model.len() - 1].get_output_size()[1], 0.);
+                let mut y = na::DMatrix::<f64>::from_vec(self._topology[0], 1, y_train[i].clone());
+                //y[(0, y_train[i].clone() as usize)] = 1.0;
+        
+                self.backward(lo.clone(), y.clone());
+            }
+
+            println!(" - ");
+            println!(" - Validation = {:.2} %", self.compute_accuracy_mdim(x_val.clone(), y_val.clone()));
+            println!(" - - - - - - - - - - - - - - - - - - - - ");
             
         }
     }
@@ -226,9 +365,10 @@ impl NN {
 
 
     // Predict
-    pub fn predict(&mut self, input : Vec<Option<f64>>) -> i64{
-        let li = na::DMatrix::<f64>::from_vec(input.len(), 1, input.iter().map(|x| x.unwrap()).collect());
-        let lo = self.forward(li.clone());
+    pub fn predict(&mut self, input : Vec<f64>) -> i64{
+
+        let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, input.clone());
+        let lo : na::DMatrix::<f64> = self.forward(li.clone());
 
         let mut maxid : usize = 0;
         let mut maxval : f64 = 0.0;
