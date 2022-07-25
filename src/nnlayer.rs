@@ -577,7 +577,7 @@ impl NNLayer {
 
         if self._full {
             let add_size = self._kern - 1;
-            self._out_size = self.conv2d_output_size((in1.shape().0 + 2*add_size, in1.shape().1 + 2*add_size));
+            self._out_size = self.conv2d_output_size((input[0].shape().0 + 2*add_size, input[0].shape().1 + 2*add_size));
 
             for i in 0..input.len() {
                 if add_size > 0 {
