@@ -56,7 +56,8 @@ pub struct NNLayer {
     _time : f64,
     _adam_epsilon : f64,
 
-    _smooth : f64
+    _smooth : f64,
+    _full : bool
 }
 
 
@@ -75,7 +76,7 @@ impl NNLayer {
     */
 
     // Construct NNLayer
-    pub fn new(layer_type : String, input_size : Vec<usize>, output_size : Vec<usize>, f_act : String, learning_rate : f64) -> NNLayer {
+    pub fn new(layer_type : String, input_size : Vec<usize>, output_size : Vec<usize>, f_act : String, learning_rate : f64, full : bool) -> NNLayer {
         let mut nnlayer = NNLayer {
             // Layer definition: Dense || Conv2d || MaxPooling || Dropout.
             _layer_type : layer_type.clone(),
@@ -133,6 +134,7 @@ impl NNLayer {
             _adam_epsilon : 0.00000001,
 
             _smooth : 1.0,
+            _full : false,
         };
 
         if layer_type == "conv2d" {
@@ -568,6 +570,28 @@ impl NNLayer {
         self._input_conv = input.clone();
 
         self._out_size = self.conv2d_output_size(input[0].shape());
+
+
+
+
+
+        if self._full {
+            let add_size = self._kern - 1;
+            out_size = self.conv2d_output_size((in1.shape().0 + 2*add_size, in1.shape().1 + 2*add_size));
+
+            for i in 0..input.len() {
+                if add_size > 0 {
+                    input[i] = input[i].clone().insert_rows(0, add_size, 0.0);
+                    input[i] = input[i].clone().insert_columns(0, add_size, 0.0);
+                    input[i] = input[i].clone().insert_rows(input[i].nrows(), add_size, 0.0);
+                    input[i] = input[i].clone().insert_columns(input[i].ncols(), add_size, 0.0);
+                }
+            }
+        }
+
+
+
+
 
         self._qvaluesu_conv = Vec::new();
         for i in 0..self._kernels.len() {
