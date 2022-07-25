@@ -41,6 +41,10 @@ pub struct NNLayer {
     _qvaluesu_conv : Vec<na::DMatrix::<f64>>,
     _input_conv : Vec<na::DMatrix::<f64>>,
 
+    // Concat layer
+    _qvalues_concat : Vec<na::DMatrix::<f64>>, 
+    _concat_pair : usize,
+
     // Differential privacy
     _dp : bool,
     _epsilon : f64,
@@ -116,6 +120,9 @@ impl NNLayer {
             _qvalues_conv : Vec::new(),
             _qvaluesu_conv : Vec::new(),
 
+            // Concat layer
+            _qvalues_concat : Vec::new(), //na::DMatrix::from_element(1, input_size[1], 0.), 
+            _concat_pair : 0,
 
             // Differential Privacy
             _dp : false,
@@ -159,6 +166,9 @@ impl NNLayer {
             nnlayer._padding = output_size[3];
             nnlayer._depth = input_size[0];
         }
+        else if layer_type == "concat" {
+            nnlayer._concat_pair = output_size[3];
+        }
 
         return nnlayer;
     }
@@ -169,7 +179,7 @@ impl NNLayer {
 
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    // Utils
+    // Utils Get
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     pub fn get_layer_type(&self) -> String {
         return self._layer_type.clone();
@@ -183,10 +193,30 @@ impl NNLayer {
         return self._output_size.clone();
     }
 
+    pub fn get_concat_pair(&self) -> usize {
+        return self._concat_pair.clone();
+    }
+
+    pub fn get_input_conv(&self) -> Vec<na::DMatrix::<f64>> {
+        return self._input_conv.clone();
+    }
 
 
 
 
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // Utils Set
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    pub fn set_concat_pair(&mut self, pair : usize) {
+        self._concat_pair = pair;
+    }
+
+
+    pub fn set_concat_qvalues(&mut self, qvalues : Vec<na::DMatrix<f64>>) {
+        self._qvalues_concat = qvalues.clone();
+    }
 
 
 
@@ -220,14 +250,15 @@ impl NNLayer {
     // Concatenate Layer
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    pub fn concat_forward(&mut self, input : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
+    pub fn concat_forward(&mut self, input : Vec<na::DMatrix::<f64>>, input_prev : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
         let mut output = Vec::new();
+
         for i in 0..input.len() {
             output.push(input[i].clone());
         }
 
-        for i in 0..self._qvalues_conv.len() {
-            output.push(self._qvalues_conv[i].clone());
+        for i in 0..input_prev.len() {
+            output.push(input_prev[i].clone());
         }
 
         return output;
@@ -236,12 +267,9 @@ impl NNLayer {
 
     pub fn concat_backward(&mut self, input : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
         let mut output = Vec::new();
-        for i in 0..input.len() {
-            output.push(input[i].clone());
-        }
 
-        for i in 0..self._qvalues_conv.len() {
-            output.push(self._qvalues_conv[i].clone());
+        for i in 0..self._input_size_depth {
+            output.push(input[i].clone());
         }
 
         return output;
@@ -1138,6 +1166,9 @@ impl NNLayer {
         else if self._layer_type == "conv2dup".to_string() {
             return self.conv2d_up_forward(input);
         }
+        else if self._layer_type == "concat".to_string() {
+            return self.concat_forward(input, input);
+        }
         else {
             return self.max_pooling_forward(input);
         }
@@ -1158,6 +1189,9 @@ impl NNLayer {
         }
         else if self._layer_type == "conv2dup".to_string() {
             return self.conv2d_up_backward(gradient_from_above);
+        }
+        else if self._layer_type == "concat".to_string() {
+            return self.concat_backward(gradient_from_above);
         }
         else {
             return self.max_pooling_backward(gradient_from_above);

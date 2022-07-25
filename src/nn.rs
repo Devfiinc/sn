@@ -50,15 +50,19 @@ impl NN {
             }
             println!("--------------------------------------------------------------------------------");
         } else {    //CNN
-            nn._model.push(nnlayer::NNLayer::new("reshape".to_string(), vec![1, 1, 784],     vec![1, 28, 28],     "sigmoid".to_string(), learning_rate, false));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),  vec![1, 28, 28],     vec![5, 3, 1, 0],    "sigmoid".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("reshape".to_string(),     vec![1, 1, 784],     vec![1, 28, 28],     "sigmoid".to_string(), learning_rate, false));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),      vec![1, 28, 28],     vec![5, 3, 1, 0],    "sigmoid".to_string(), learning_rate, true));
             
-            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![5, 28, 28],     vec![5, 2, 2, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),  vec![5, 14, 14],     vec![5, 2, 1, 0],    "sigmoid".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(), vec![5, 28, 28], vec![5, 2, 2, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),      vec![5, 14, 14],      vec![5, 2, 1, 0],    "sigmoid".to_string(), learning_rate, true));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2dup".to_string(),    vec![5, 14, 14],     vec![5, 2, 2, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),      vec![5, 28, 28],     vec![5, 28, 28, 2],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(), vec![5, 28, 28],     vec![5, 2, 2, 0],    "relu".to_string(), learning_rate, true));
             
-            nn._model.push(nnlayer::NNLayer::new("reshape".to_string(), vec![5, 14, 14],     vec![1, 1, 5*14*14], "sigmoid".to_string(), learning_rate, false));
-            nn._model.push(nnlayer::NNLayer::new("dense".to_string(),   vec![1, 5*14*14, 1], vec![1, 100, 1],     "sigmoid".to_string(), learning_rate, false));
-            nn._model.push(nnlayer::NNLayer::new("dense".to_string(),   vec![1, 100, 1],     vec![1, 10, 1],      "sigmoid".to_string(), learning_rate, false));
+            nn._model.push(nnlayer::NNLayer::new("reshape".to_string(),     vec![5, 14, 14],     vec![1, 1, 5*14*14], "sigmoid".to_string(), learning_rate, false));
+            nn._model.push(nnlayer::NNLayer::new("dense".to_string(),       vec![1, 5*14*14, 1], vec![1, 100, 1],     "sigmoid".to_string(), learning_rate, false));
+            nn._model.push(nnlayer::NNLayer::new("dense".to_string(),       vec![1, 100, 1],     vec![1, 10, 1],      "sigmoid".to_string(), learning_rate, false));
 
 
             // Im size = 96 x 96
@@ -137,7 +141,13 @@ impl NN {
         //println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
         for i in 0..self._model.len() {
             //println!("Layer {} : {}", i+1, self._model[i].get_layer_type());
-            vals = self._model[i].forward(vals);
+            if self._model[i].get_layer_type() == "concat".to_string() {
+                let pair = self._model[i].get_concat_pair();
+                let prev_vals = self._model[pair].get_input_conv();
+                vals = self._model[i].concat_forward(vals, prev_vals);
+            } else {
+                vals = self._model[i].forward(vals);
+            }
             //println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
 
             //println!("global forward");
