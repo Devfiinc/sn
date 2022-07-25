@@ -44,7 +44,7 @@ impl NN {
         if layers[0] == "dense".to_string() {
             for i in 0..topology.len() - 1 {
                 let fact = activation_functions[i].clone();
-                nn._model.push(nnlayer::NNLayer::new(layer_type.clone(), vec![1, topology[i], 1], vec![1, topology[i+1], 1], fact, learning_rate));    
+                nn._model.push(nnlayer::NNLayer::new(layer_type.clone(), vec![1, topology[i], 1], vec![1, topology[i+1], 1], fact, learning_rate, false));    
                 println!("--------------------------------------------------------------------------------");
                 println!("  Layer {}: {} with topology {} - {}", i, layer_type.clone(), topology[i], topology[i+1]);
             }
