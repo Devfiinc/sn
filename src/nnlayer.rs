@@ -579,15 +579,12 @@ impl NNLayer {
         self._out_size = self.conv2d_output_size(input[0].shape());
 
 
-        
-
+        // If full conv2d forward, output_size = input_size
         println!("Full {}", self._full);
         if self._full {
-            let add_size = (self._kern - 1) / 2;
-            println!("Out size {} {}", self._out_size.0, self._out_size.1);
+            let mut add_size = (self._kern - 1) / 2;
+            //let mut add_size = input[0].shape().0 - self._out_size.0;
             self._out_size = self.conv2d_output_size((input[0].shape().0 + 2*add_size, input[0].shape().1 + 2*add_size));
-            println!("Out size {} {}", self._out_size.0, self._out_size.1);
-
             for i in 0..input.len() {
                 if add_size > 0 {
                     self._input_conv[i] = self._input_conv[i].clone().insert_rows(0, add_size, 0.0);
@@ -596,7 +593,34 @@ impl NNLayer {
                     self._input_conv[i] = self._input_conv[i].clone().insert_columns(self._input_conv[i].ncols(), add_size, 0.0);
                 }
             }
+
+            add_size = input[0].shape().0 - self._out_size.0;
+            if add_size > 0 {
+                self._out_size = (self._out_size.0 + add_size, self._out_size.1 + add_size);
+                for i in 0..input.len() {
+                    self._input_conv[i] = self._input_conv[i].clone().insert_rows(self._input_conv[i].nrows(), add_size, 0.0);
+                    self._input_conv[i] = self._input_conv[i].clone().insert_columns(self._input_conv[i].ncols(), add_size, 0.0);
+                }
+            }
         }
+        
+
+        //println!("Full {}", self._full);
+        //if self._full {
+        //    let add_size = (self._kern - 1) / 2;
+        //    println!("Out size {} {}", self._out_size.0, self._out_size.1);
+        //    self._out_size = self.conv2d_output_size((input[0].shape().0 + 2*add_size, input[0].shape().1 + 2*add_size));
+        //    println!("Out size {} {}", self._out_size.0, self._out_size.1);
+//
+        //    for i in 0..input.len() {
+        //        if add_size > 0 {
+        //            self._input_conv[i] = self._input_conv[i].clone().insert_rows(0, add_size, 0.0);
+        //            self._input_conv[i] = self._input_conv[i].clone().insert_columns(0, add_size, 0.0);
+        //            self._input_conv[i] = self._input_conv[i].clone().insert_rows(self._input_conv[i].nrows(), add_size, 0.0);
+        //            self._input_conv[i] = self._input_conv[i].clone().insert_columns(self._input_conv[i].ncols(), add_size, 0.0);
+        //        }
+        //    }
+        //}
 
 
 
@@ -731,6 +755,14 @@ impl NNLayer {
                 in1 = in1.clone().insert_rows(in1.nrows(), add_size, 0.0);
                 in1 = in1.clone().insert_columns(in1.ncols(), add_size, 0.0);
             }
+
+            add_size = in1.nrows() - out_size.0;
+
+            if add_size > 0 {
+                out_size = (out_size.0 + add_size, out_size.1 + add_size);
+                in1 = in1.clone().insert_rows(in1.nrows(), add_size, 0.0);
+                in1 = in1.clone().insert_columns(in1.ncols(), add_size, 0.0);
+            }
             
         }
 
@@ -852,6 +884,37 @@ impl NNLayer {
 
 
 
+    pub fn create_mask_from_window(&self, window : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+        let mut mask = na::DMatrix::from_element(self._kern, self._kern, 0.);
+        let mut maxi : usize = 0;
+        let mut maxj : usize = 0;
+        let mut max  : f64 = 0.0;
+        for i in 0..self._kern {
+            for j in 0..self._kern {
+                if window[(i,j)] > max {
+                    max = window[(i,j)];
+                    maxi = i;
+                    maxj = j;
+                }
+            }
+        }
+        mask[(maxi, maxj)] = 1.0;
+        return mask;
+    }
+
+
+
+    pub fn slice_dmatrix(&self, input : na::DMatrix::<f64>, window : (usize, usize, usize, usize)) -> na::DMatrix::<f64> {
+        let mut prev = na::DMatrix::from_element(window.2, window.3, 0.);
+        for i in 0..window.2 {
+            for j in 0..window.3 {
+                prev[(i,j)] = input[(i + window.0, j + window.1)];
+            }
+        }
+        return prev;
+    }
+
+
     pub fn max_pooling_backward(&mut self, gradient_from_above : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
         let mut grad_input : Vec<na::DMatrix::<f64>> = Vec::new();
         for i in 0..self._input_conv.len() {
@@ -870,20 +933,21 @@ impl NNLayer {
                     max.push(0.);
                 }
 
-                for ki in 0..self._kern {
-                    for kj in 0..self._kern {
-                        for inp in 0..self._input_size_depth {
-                            if self._input_conv[inp][(i + ki, j + kj)] > max[inp] {
-                                maxi[inp] = ki;
-                                maxj[inp] = kj;
-                                max[inp] = self._input_conv[inp][(i + ki, j + kj)];
-                            }
+                for inp in 0..self._input_size_depth {
+
+                    let prev = self.slice_dmatrix(self._input_conv[inp].clone(), (i, j, self._kern, self._kern));
+                    
+                    let mask = self.create_mask_from_window(prev);
+
+                    let new = gradient_from_above[inp][(i/self._stride,j/self._stride)];
+
+                    let dA = new * mask.clone();
+
+                    for ki in 0..self._kern {
+                        for kj in 0..self._kern {
+                            grad_input[inp][(i + ki, j + kj)] += dA[(ki,kj)];
                         }
                     }
-                }
-
-                for inp in 0..self._input_size_depth {
-                    grad_input[inp][(i + maxi[inp], j + maxj[inp])] = max[inp];
                 }
             }
         }

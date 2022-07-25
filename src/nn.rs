@@ -54,7 +54,7 @@ impl NN {
             nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),  vec![1, 28, 28],     vec![5, 3, 1, 0],    "sigmoid".to_string(), learning_rate, true));
             
             nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![5, 28, 28],     vec![5, 2, 2, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),  vec![1, 14, 14],     vec![5, 2, 1, 0],    "sigmoid".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),  vec![5, 14, 14],     vec![5, 2, 1, 0],    "sigmoid".to_string(), learning_rate, true));
             
             nn._model.push(nnlayer::NNLayer::new("reshape".to_string(), vec![5, 14, 14],     vec![1, 1, 5*14*14], "sigmoid".to_string(), learning_rate, false));
             nn._model.push(nnlayer::NNLayer::new("dense".to_string(),   vec![1, 5*14*14, 1], vec![1, 100, 1],     "sigmoid".to_string(), learning_rate, false));
