@@ -133,20 +133,20 @@ impl NN {
 
         let mut vals : Vec<na::DMatrix::<f64>> = vec![input.transpose().clone()];
 
-        println!("Layer 0 : ");
-        println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
+        //println!("Layer 0 : ");
+        //println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
         for i in 0..self._model.len() {
-            println!("Layer {} : {}", i+1, self._model[i].get_layer_type());
+            //println!("Layer {} : {}", i+1, self._model[i].get_layer_type());
             vals = self._model[i].forward(vals);
-            println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
+            //println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
 
-            println!("global forward");
-            for a in 0..vals[0].nrows() {
-                for b in 0..vals[0].ncols() {
-                    print!("{:.2} ", vals[0][(a,b)]);
-                }
-                println!("");
-            }
+            //println!("global forward");
+            //for a in 0..vals[0].nrows() {
+            //    for b in 0..vals[0].ncols() {
+            //        print!("{:.2} ", vals[0][(a,b)]);
+            //    }
+            //    println!("");
+            //}
 
         }
 
@@ -157,9 +157,9 @@ impl NN {
 
     // Back propagation
     pub fn backward(&mut self, output : na::DMatrix::<f64>, ytrain : na::DMatrix::<f64>) {
-        println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-        println!("     BACK PROPAGATION                                              ");
-        println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+        //println!("     BACK PROPAGATION                                              ");
+        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
 
         let mut n : f64 = output.ncols() as f64;
         if output.nrows() > output.ncols() {
@@ -168,20 +168,20 @@ impl NN {
 
         let mut delta : Vec<na::DMatrix::<f64>> = vec![(2.0 / n) * (output.clone() - ytrain.clone())];
         
-        println!("Layer {} : ", self._model.len());
-        println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
+        //println!("Layer {} : ", self._model.len());
+        //println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
         for i in (0..self._model.len()).rev() {
-            println!("Layer {} : {}", i, self._model[i].get_layer_type());
+            //println!("Layer {} : {}", i, self._model[i].get_layer_type());
             delta = self._model[i].backward(delta.clone());
-            println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
+            //println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
 
-            println!("global backward");
-            for a in 0..delta[0].nrows() {
-                for b in 0..delta[0].ncols() {
-                    print!("{:.2} ", delta[0][(a,b)]);
-                }
-                println!("");
-            }
+            //println!("global backward");
+            //for a in 0..delta[0].nrows() {
+            //    for b in 0..delta[0].ncols() {
+            //        print!("{:.2} ", delta[0][(a,b)]);
+            //    }
+            //    println!("");
+            //}
 
 
         }

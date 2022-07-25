@@ -580,7 +580,6 @@ impl NNLayer {
 
 
         // If full conv2d forward, output_size = input_size
-        println!("Full {}", self._full);
         if self._full {
             let mut add_size = (self._kern - 1) / 2;
             //let mut add_size = input[0].shape().0 - self._out_size.0;
@@ -739,9 +738,9 @@ impl NNLayer {
         }
 
         in2 = self.rotate_matrix_180deg(in2.clone());
- 
 
         let mut out_size = self.conv2d_output_size(in1.shape());
+
         if full {
             let mut add_size = self._kern - 1;
             if self._full {
@@ -758,7 +757,7 @@ impl NNLayer {
 
             add_size = in1.nrows() - out_size.0;
 
-            if add_size > 0 {
+            if add_size % 2 == 1 {
                 out_size = (out_size.0 + add_size, out_size.1 + add_size);
                 in1 = in1.clone().insert_rows(in1.nrows(), add_size, 0.0);
                 in1 = in1.clone().insert_columns(in1.ncols(), add_size, 0.0);
