@@ -2,18 +2,42 @@
 import numpy as np
 
 
-inputs = np.array([[3, 3, 3, 6],
-                   [7, 4, 3, 2],
-                   [7, 2, 8, 5],
-                   [1, 7, 3, 1]])
+inputs = np.array([[3, 3, 3, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 2, 8, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 2, 8, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 2, 8, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 2, 8, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 2, 8, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 2, 8, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 2, 8, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 2, 8, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 2, 8, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 2, 8, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [7, 2, 8, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [1, 7, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
 
-kernel = np.array([[1, 2, 4], 
-                   [1, 1, 3], 
-                   [1, 2, 4]])
+kernel = np.array([[1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
 
+
+input_shape = (28, 28)
 
 def convolution_matrix(m, k):
-    mr, mc = len(m), len(m[0]) # matrix rows, cols
+    mr, mc = m[0], m[1] # matrix rows, cols
     kr, kc = len(k), len(k[0]) # kernel rows, cols
 
     padding = 0
@@ -21,6 +45,11 @@ def convolution_matrix(m, k):
 
     fr = int(((mr - kr + 2.0 * padding) / stride) + 1);
     fc = int(((mc - kc + 2.0 * padding) / stride) + 1);
+
+
+    print(mr, mc)
+    print(kr, kc)
+    print(fr, fc)
 
     cmat = np.zeros((fr*fc, mr*mc))
 
@@ -37,16 +66,40 @@ def convolution_matrix(m, k):
                 cmat[i][d1*mc + d2 + r*mc + c] = k[r][c]
         d2 += 1
 
-    print(cmat)
+    #print(cmat)
+    return cmat
     
 
-#convolution_matrix(inputs, kernel)
+cmat = convolution_matrix(input_shape, kernel)
+print("cmat", cmat.shape)
 
 
-dims = (4, 4)
+inp1 = inputs.flatten()
+inp = np.zeros((inp1.shape[0], 1))
+print("inp", inp.shape)
 
-def tupleman(dim = (0,0)):
-    print(dim[0])
+for i in range(len(inp)):
+    inp[i] = inp1[i]
 
-tupleman()
-tupleman(dims)
+#print(inp)
+
+out = np.dot(cmat.T, inp)
+
+
+print(out.shape)
+
+out1 = out.reshape(input_shape)
+
+print(out1.shape)
+
+print(out1)
+#print(out)
+
+
+#dims = (4, 4)
+#
+#def tupleman(dim = (0,0)):
+#    print(dim[0])
+#
+#tupleman()
+#tupleman(dims)

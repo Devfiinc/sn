@@ -159,6 +159,21 @@ impl NNLayer {
                 }
             }
         } 
+        else if layer_type == "conv2dup" {
+            nnlayer._num_kernels = output_size[0];
+            nnlayer._kern = output_size[1];
+            nnlayer._stride = output_size[2];
+            nnlayer._padding = output_size[3];
+
+            nnlayer._depth = input_size[0];
+
+            for i in 0..nnlayer._num_kernels {
+                nnlayer._kernels.push(Vec::new());
+                for j in 0..nnlayer._input_size_depth {
+                    nnlayer._kernels[i].push(na::DMatrix::from_fn(nnlayer._input_size[1] + 1, nnlayer._input_size[1] + 1, |_r,_c| {rand::random::<f64>() - 0.5}));
+                }
+            }
+        }
         else if layer_type == "max_pooling" {
             nnlayer._num_kernels = output_size[0];
             nnlayer._kern = output_size[1];
@@ -168,6 +183,7 @@ impl NNLayer {
         }
         else if layer_type == "concat" {
             nnlayer._concat_pair = output_size[3];
+            nnlayer._output_size_depth = 2*nnlayer._input_size_depth;
         }
 
         return nnlayer;
@@ -314,13 +330,42 @@ impl NNLayer {
 
         for a in 0..input.nrows() {
             for b in 0..input.ncols() {
-                out[(1,a*cols + b)] = input[(a,b)];
+                out[(0, a*cols + b)] = input[(a,b)];
             }
         }
 
         if column {
             return out.transpose();
         }
+        return out;
+    }
+
+
+    pub fn reshape(&mut self, input : na::DMatrix::<f64>, shape : (usize, usize)) -> na::DMatrix::<f64> {
+       
+        let input_size_i        = input.shape().0;
+        let input_size_j        = input.shape().1;
+
+        let output_size_i       = shape.0;
+        let output_size_j       = shape.1;
+
+        let mut out = na::DMatrix::from_element(output_size_i, output_size_j, 0.);
+        
+        for im in 0..input.len() {
+            let mut oi : usize = 0;
+            let mut oj : usize = 0;
+            for a in 0..input.nrows() {
+                for b in 0..input.ncols() {
+                    if oj == output_size_j {
+                        oi += 1;
+                        oj = 0;
+                    }
+                    out[(oi,oj)] = input[(a,b)];
+                    oj += 1;
+                }
+            }
+        }
+
         return out;
     }
 
@@ -500,16 +545,75 @@ impl NNLayer {
 
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // Upsampling
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+    pub fn upsampling_forward(&mut self, input : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
+        let mut output : Vec<na::DMatrix::<f64>> = Vec::new();
+
+        for inp in 0..input.len() {
+            let mut ups = na::DMatrix::<f64>::from_element(self._input_size_i * self._kern, self._input_size_j * self._kern, 0.);
+
+            for i in 0..input[inp].nrows() {
+                for j in 0..input[inp].ncols() {
+                    ups[(2*i,2*j)] = input[inp][(i,j)];
+                    ups[(2*i,2*j+1)] = input[inp][(i,j)];
+                    ups[(2*i+1,2*j)] = input[inp][(i,j)];
+                    ups[(2*i+1,2*j+1)] = input[inp][(i,j)];
+                }
+            }
+
+            output.push(ups);
+        }
+
+        return output;
+    }
+
+
+    pub fn upsampling_backward(&mut self, input : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
+        let mut output : Vec<na::DMatrix::<f64>> = Vec::new();
+
+        for inp in 0..input.len() {
+            let mut ups = na::DMatrix::<f64>::from_element(self._input_size_i, self._input_size_j, 0.);
+
+            for i in 0..ups.nrows() {
+                for j in 0..ups.ncols() {
+                    ups[(i,j)] += input[inp][(2*i,2*j)];
+                    ups[(i,j)] += input[inp][(2*i,2*j+1)];
+                    ups[(i,j)] += input[inp][(2*i+1,2*j)];
+                    ups[(i,j)] += input[inp][(2*i+1,2*j+1)];
+                    ups[(i,j)] /= 4.;
+                }
+            }
+
+            output.push(ups);
+        }
+
+        return output;
+    }
+
+
+
+
+
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // Transposed Convolutional Layer (ConvUp)
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    pub fn convolution_matrix(&mut self, m : na::DMatrix::<f64>, k : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
+    pub fn convolution_matrix(&mut self, m : (usize, usize), k : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
 
-        let (mr, mc) = m.shape();
+        let (mr, mc) = (m.0, m.1);
         let (kr, kc) = k.shape();
-        let (fr, fc) = self.conv2d_output_size(m.shape());
+        let (fr, fc) = self.conv2d_output_size_cust(m, k.shape(), 0, 1);
 
-        let mut cmat = na::DMatrix::<f64>::from_element(fr*fc, mr+mc, 0.);
+        //println!(" . mr mc {} {}", mr, mc);
+        //println!(" . kr kc {} {}", kr, kc);
+        //println!(" . fr fc {} {}", fr, fc);
+
+        let mut cmat = na::DMatrix::<f64>::from_element(fr*fc, mr*mc, 0.);
 
         let mut d1 : usize = 0;
         let mut d2 : usize = 0;
@@ -523,65 +627,80 @@ impl NNLayer {
                     cmat[(i, d1*mc + d2 + r*mc + c)] = k[(r,c)];
                 }
             }
+            d2 += 1;
         }
         return cmat;
     }
 
 
-    pub fn convolution_matrix_kernel(&mut self, m : Vec<na::DMatrix::<f64>>, k : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
+    pub fn convolution_matrix_kernel(&mut self, m : (usize, usize), k : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
         let mut output : Vec<na::DMatrix::<f64>> = Vec::new();
-        for i in 0..m.len() {
-            output.push(self.convolution_matrix(m[i].clone(), k[i].clone()).transpose());
+        for i in 0..k.len() {
+            //println!("image {}", i);
+            output.push(self.convolution_matrix(m, k[i].clone()).transpose());
         }
+        return output;
+    }
+
+    
+
+
+    pub fn conv2dup_forward(&mut self, input : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
+
+        self._input_conv = input.clone();
+        
+        let mut output : Vec<na::DMatrix::<f64>> = Vec::new();
+
+        let (fr, fc) = (input[0].shape().0 * self._kern, input[0].shape().1 * self._kern);
+
+        for k in 0..self._num_kernels {
+            let conv_matrix = self.convolution_matrix_kernel((fr, fc), self._kernels[k].clone());
+            let mut cmat = na::DMatrix::<f64>::from_element(fr*fc, 1, 0.);
+
+            for i in 0..input.len() {
+                cmat += conv_matrix[i].clone() * self.flatten(input[i].clone(), true);
+            }
+
+            output.push(self.reshape(cmat.clone(), (fr, fc)));
+        }
+
         return output;
     }
 
 
 
-    pub fn conv2d_up_forward(&mut self, input : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
-        let mut output : Vec<na::DMatrix::<f64>> = Vec::new();
+    pub fn conv2dup_backward(&mut self, grad : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
+        let mut grad_kernels : Vec<Vec<na::DMatrix::<f64>>> = Vec::new();
 
-        let (fr, fc) = self.conv2d_output_size(input[0].shape());
-        let (mr, mc) = input[0].shape();
+        let (fr, fc) = (grad[0].shape().0 / self._kern, grad[0].shape().1 / self._kern);
 
-        for k in 0..self._num_kernels {
-            let conv_matrix = self.convolution_matrix_kernel(input.clone(), self._kernels[k].clone());
-            
-            let mut cmat = na::DMatrix::<f64>::from_element(fr*fc, 1, 0.);
-
-            for i in 0..input.len() {
-                let inp = input[i].clone().resize(mr*mc, 1, 0.);
-                cmat = cmat + inp * conv_matrix[i].clone();
+        for i in 0..self._num_kernels {
+            grad_kernels.push(Vec::new());
+            for j in 0..self._input_size_depth {
+                grad_kernels[i].push(na::DMatrix::from_element(self._kernels[0][0].nrows(), self._kernels[0][0].ncols(), 0.));
             }
-
-            output.push(cmat);
         }
 
-        return output;
-    }
-
-
-
-    pub fn conv2d_up_backward(&mut self, input : Vec<na::DMatrix::<f64>>) -> Vec<na::DMatrix::<f64>> {
-        let mut output : Vec<na::DMatrix::<f64>> = Vec::new();
-
-        let (fr, fc) = self.conv2d_output_size(input[0].shape());
-        let (mr, mc) = input[0].shape();
-
-        for k in 0..self._num_kernels {
-            let conv_matrix = self.convolution_matrix_kernel(input.clone(), self._kernels[k].clone());
-            
-            let mut cmat = na::DMatrix::<f64>::from_element(fr*fc, 1, 0.);
-
-            for i in 0..input.len() {
-                let inp = input[i].clone().resize(mr*mc, 1, 0.);
-                cmat = cmat + inp * conv_matrix[i].clone();
-            }
-
-            output.push(cmat);
+        let mut grad_input : Vec<na::DMatrix::<f64>> = Vec::new();
+        for i in 0..self._input_size_depth {
+            grad_input.push(na::DMatrix::from_element(fr, fc, 0.));
         }
 
-        return output;
+        for i in 0..self._num_kernels {
+            for j in 0..self._input_size_depth {
+                grad_kernels[i][j] = self.correlate2d(self._input_conv[j].clone(), grad[i].clone());
+                grad_input[j] += self.convolve2d(grad[i].clone(), self._kernels[i][j].clone(), true);
+                break;
+            }
+        }
+
+        for i in 0..self._num_kernels {
+            for j in 0..self._input_size_depth {
+                self._kernels[i][j] -= self._learning_rate * grad_kernels[i][j].clone();
+            }
+        }
+
+        return grad_input;
     }
 
 
@@ -597,6 +716,13 @@ impl NNLayer {
         let output_rows = ((input_rows as f32 - self._kern as f32 + 2.0 * self._padding as f32) / self._stride as f32) as usize + 1;
         let output_cols = ((input_cols as f32 - self._kern as f32 + 2.0 * self._padding as f32) / self._stride as f32) as usize + 1;
         return (output_rows, output_cols);
+    }
+
+    pub fn conv2d_output_size_cust(&self, mat : (usize, usize), ker : (usize, usize), pad : usize, stride : usize) -> (usize, usize) {
+        let (input_rows, input_cols) = (mat.0, mat.1);
+        let or = ((mat.0 as f32 - ker.0 as f32 + 2.0 * pad as f32) / stride as f32) as usize + 1;
+        let oc = ((mat.1 as f32 - ker.1 as f32 + 2.0 * pad as f32) / stride as f32) as usize + 1;
+        return (or, oc);
     }
 
 
@@ -1164,10 +1290,13 @@ impl NNLayer {
             return self.dropout_forward(input);
         }
         else if self._layer_type == "conv2dup".to_string() {
-            return self.conv2d_up_forward(input);
+            return self.conv2dup_forward(input);
+        }
+        else if self._layer_type == "upsampling".to_string() {
+            return self.upsampling_forward(input);
         }
         else if self._layer_type == "concat".to_string() {
-            return self.concat_forward(input, input);
+            return self.concat_forward(input.clone(), input.clone());
         }
         else {
             return self.max_pooling_forward(input);
@@ -1188,7 +1317,10 @@ impl NNLayer {
             return self.reshape_backward(gradient_from_above);
         }
         else if self._layer_type == "conv2dup".to_string() {
-            return self.conv2d_up_backward(gradient_from_above);
+            return self.conv2dup_backward(gradient_from_above);
+        }
+        else if self._layer_type == "upsampling".to_string() {
+            return self.upsampling_backward(gradient_from_above);
         }
         else if self._layer_type == "concat".to_string() {
             return self.concat_backward(gradient_from_above);
