@@ -52,8 +52,12 @@ impl NN {
         } else {    //CNN
             nn._model.push(nnlayer::NNLayer::new("reshape".to_string(), vec![1, 1, 784],     vec![1, 28, 28],     "sigmoid".to_string(), learning_rate, false));
             nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),  vec![1, 28, 28],     vec![5, 3, 1, 0],    "sigmoid".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("reshape".to_string(), vec![5, 28, 28],     vec![1, 1, 5*28*28], "sigmoid".to_string(), learning_rate, false));
-            nn._model.push(nnlayer::NNLayer::new("dense".to_string(),   vec![1, 5*28*28, 1], vec![1, 100, 1],     "sigmoid".to_string(), learning_rate, false));
+            
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![5, 28, 28],     vec![5, 2, 2, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),  vec![1, 14, 14],     vec![5, 2, 1, 0],    "sigmoid".to_string(), learning_rate, true));
+            
+            nn._model.push(nnlayer::NNLayer::new("reshape".to_string(), vec![5, 14, 14],     vec![1, 1, 5*14*14], "sigmoid".to_string(), learning_rate, false));
+            nn._model.push(nnlayer::NNLayer::new("dense".to_string(),   vec![1, 5*14*14, 1], vec![1, 100, 1],     "sigmoid".to_string(), learning_rate, false));
             nn._model.push(nnlayer::NNLayer::new("dense".to_string(),   vec![1, 100, 1],     vec![1, 10, 1],      "sigmoid".to_string(), learning_rate, false));
 
 
@@ -129,20 +133,20 @@ impl NN {
 
         let mut vals : Vec<na::DMatrix::<f64>> = vec![input.transpose().clone()];
 
-        //println!("Layer 0 : ");
-        //println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
+        println!("Layer 0 : ");
+        println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
         for i in 0..self._model.len() {
-            //println!("Layer {} : {}", i+1, self._model[i].get_layer_type());
+            println!("Layer {} : {}", i+1, self._model[i].get_layer_type());
             vals = self._model[i].forward(vals);
-            //println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
+            println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
 
-            //println!("global forward");
-            //for a in 0..vals[0].nrows() {
-            //    for b in 0..vals[0].ncols() {
-            //        print!("{:.2} ", vals[0][(a,b)]);
-            //    }
-            //    println!("");
-            //}
+            println!("global forward");
+            for a in 0..vals[0].nrows() {
+                for b in 0..vals[0].ncols() {
+                    print!("{:.2} ", vals[0][(a,b)]);
+                }
+                println!("");
+            }
 
         }
 
@@ -153,9 +157,9 @@ impl NN {
 
     // Back propagation
     pub fn backward(&mut self, output : na::DMatrix::<f64>, ytrain : na::DMatrix::<f64>) {
-        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-        //println!("     BACK PROPAGATION                                              ");
-        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+        println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+        println!("     BACK PROPAGATION                                              ");
+        println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
 
         let mut n : f64 = output.ncols() as f64;
         if output.nrows() > output.ncols() {
@@ -164,20 +168,20 @@ impl NN {
 
         let mut delta : Vec<na::DMatrix::<f64>> = vec![(2.0 / n) * (output.clone() - ytrain.clone())];
         
-        //println!("Layer {} : ", self._model.len());
-        //println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
+        println!("Layer {} : ", self._model.len());
+        println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
         for i in (0..self._model.len()).rev() {
-            //println!("Layer {} : {}", i, self._model[i].get_layer_type());
+            println!("Layer {} : {}", i, self._model[i].get_layer_type());
             delta = self._model[i].backward(delta.clone());
-            //println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
+            println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
 
-            //println!("global backward");
-            //for a in 0..delta[0].nrows() {
-            //    for b in 0..delta[0].ncols() {
-            //        print!("{:.2} ", delta[0][(a,b)]);
-            //    }
-            //    println!("");
-            //}
+            println!("global backward");
+            for a in 0..delta[0].nrows() {
+                for b in 0..delta[0].ncols() {
+                    print!("{:.2} ", delta[0][(a,b)]);
+                }
+                println!("");
+            }
 
 
         }

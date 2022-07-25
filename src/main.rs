@@ -520,7 +520,7 @@ fn neural_network_nerves(topology : Vec<usize>) {
 
 fn main() -> Result<(), Error> {
 
-    let opt : usize = 6;
+    let opt : usize = 5;
 
     if opt == 1{    /*Done*/
 

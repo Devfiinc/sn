@@ -134,7 +134,7 @@ impl NNLayer {
             _adam_epsilon : 0.00000001,
 
             _smooth : 1.0,
-            _full : false,
+            _full : full,
         };
 
         if layer_type == "conv2d" {
@@ -151,6 +151,13 @@ impl NNLayer {
                     nnlayer._kernels[i].push(na::DMatrix::from_fn(nnlayer._kern, nnlayer._kern, |_r,_c| {rand::random::<f64>() - 0.5}));
                 }
             }
+        } 
+        else if layer_type == "max_pooling" {
+            nnlayer._num_kernels = output_size[0];
+            nnlayer._kern = output_size[1];
+            nnlayer._stride = output_size[2];
+            nnlayer._padding = output_size[3];
+            nnlayer._depth = input_size[0];
         }
 
         return nnlayer;
@@ -572,19 +579,21 @@ impl NNLayer {
         self._out_size = self.conv2d_output_size(input[0].shape());
 
 
+        
 
-
-
+        println!("Full {}", self._full);
         if self._full {
-            let add_size = self._kern - 1;
+            let add_size = (self._kern - 1) / 2;
+            println!("Out size {} {}", self._out_size.0, self._out_size.1);
             self._out_size = self.conv2d_output_size((input[0].shape().0 + 2*add_size, input[0].shape().1 + 2*add_size));
+            println!("Out size {} {}", self._out_size.0, self._out_size.1);
 
             for i in 0..input.len() {
                 if add_size > 0 {
-                    input[i] = input[i].clone().insert_rows(0, add_size, 0.0);
-                    input[i] = input[i].clone().insert_columns(0, add_size, 0.0);
-                    input[i] = input[i].clone().insert_rows(input[i].nrows(), add_size, 0.0);
-                    input[i] = input[i].clone().insert_columns(input[i].ncols(), add_size, 0.0);
+                    self._input_conv[i] = self._input_conv[i].clone().insert_rows(0, add_size, 0.0);
+                    self._input_conv[i] = self._input_conv[i].clone().insert_columns(0, add_size, 0.0);
+                    self._input_conv[i] = self._input_conv[i].clone().insert_rows(self._input_conv[i].nrows(), add_size, 0.0);
+                    self._input_conv[i] = self._input_conv[i].clone().insert_columns(self._input_conv[i].ncols(), add_size, 0.0);
                 }
             }
         }
@@ -710,7 +719,10 @@ impl NNLayer {
 
         let mut out_size = self.conv2d_output_size(in1.shape());
         if full {
-            let add_size = self._kern - 1;
+            let mut add_size = self._kern - 1;
+            if self._full {
+                add_size /= 2;
+            }
             out_size = self.conv2d_output_size((in1.shape().0 + 2*add_size, in1.shape().1 + 2*add_size));
 
             if add_size > 0 {
@@ -806,13 +818,14 @@ impl NNLayer {
         self._input_conv = input.clone();
 
         let out_size = self.max_pooling_output_size(input[0].shape());
+
         self._qvaluesu_conv = Vec::new();
         for i in 0..self._input_size_depth {
             self._qvaluesu_conv.push(na::DMatrix::from_element(out_size.0, out_size.1, 0.));
         }
         
-        for i in (0..(self._input_size_i - self._kern)).step_by(self._stride) {
-            for j in (0..(self._input_size_j - self._kern)).step_by(self._stride) {
+        for i in (0..(self._input_size_i - self._kern + 1)).step_by(self._stride) {
+            for j in (0..(self._input_size_j - self._kern + 1)).step_by(self._stride) {
 
                 let mut max : Vec<f64> = Vec::new();
                 for maxi in 0..self._input_size_depth {
@@ -830,7 +843,7 @@ impl NNLayer {
                 }
 
                 for inp in 0..self._input_size_depth {
-                    self._qvaluesu_conv[inp][(i,j)] = max[inp];
+                    self._qvaluesu_conv[inp][(i/self._stride,j/self._stride)] = max[inp];
                 }
             }
         }
