@@ -50,60 +50,105 @@ impl NN {
             }
             println!("--------------------------------------------------------------------------------");
         } else {    //CNN
-            nn._model.push(nnlayer::NNLayer::new("reshape".to_string(),     vec![1, 1, 784],     vec![1, 28, 28],     "sigmoid".to_string(), learning_rate, false));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),      vec![1, 28, 28],     vec![5, 3, 1, 0],    "sigmoid".to_string(), learning_rate, true));
-            
-            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(), vec![5, 28, 28], vec![5, 2, 2, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),      vec![5, 14, 14],      vec![5, 2, 1, 0],    "sigmoid".to_string(), learning_rate, true));
+            //nn._model.push(nnlayer::NNLayer::new("reshape".to_string(),     vec![1, 1, 784],     vec![1, 28, 28],     "sigmoid".to_string(), learning_rate, false));
+            //nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),      vec![1, 28, 28],     vec![5, 3, 1, 0],    "sigmoid".to_string(), learning_rate, true));
+            //
+            //nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(), vec![5, 28, 28], vec![5, 2, 2, 0],    "relu".to_string(), learning_rate, true));
+            //nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),      vec![5, 14, 14],      vec![5, 2, 1, 0],    "sigmoid".to_string(), learning_rate, true));
+            //
+            //nn._model.push(nnlayer::NNLayer::new("upsampling".to_string(),    vec![5, 14, 14],     vec![5, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+            //nn._model.push(nnlayer::NNLayer::new("concat".to_string(),      vec![5, 28, 28],     vec![10, 28, 28, 2],    "relu".to_string(), learning_rate, true));
+            //nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),      vec![10, 28, 28],    vec![5, 3, 2, 0],    "relu".to_string(), learning_rate, true));
+            //
+            //nn._model.push(nnlayer::NNLayer::new("reshape".to_string(),     vec![5, 28, 28],     vec![1, 1, 5*28*28], "sigmoid".to_string(), learning_rate, false));
+            //nn._model.push(nnlayer::NNLayer::new("dense".to_string(),       vec![1, 5*28*28, 1], vec![1, 100, 1],     "sigmoid".to_string(), learning_rate, false));
+            //nn._model.push(nnlayer::NNLayer::new("dense".to_string(),       vec![1, 100, 1],     vec![1, 10, 1],      "sigmoid".to_string(), learning_rate, false));
 
-            nn._model.push(nnlayer::NNLayer::new("conv2dup".to_string(),    vec![5, 14, 14],     vec![5, 2, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),      vec![5, 28, 28],     vec![5, 28, 28, 2],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),      vec![10, 28, 28],    vec![5, 2, 2, 0],    "relu".to_string(), learning_rate, true));
-            
-            nn._model.push(nnlayer::NNLayer::new("reshape".to_string(),     vec![5, 14, 14],     vec![1, 1, 5*14*14], "sigmoid".to_string(), learning_rate, false));
-            nn._model.push(nnlayer::NNLayer::new("dense".to_string(),       vec![1, 5*14*14, 1], vec![1, 100, 1],     "sigmoid".to_string(), learning_rate, false));
-            nn._model.push(nnlayer::NNLayer::new("dense".to_string(),       vec![1, 100, 1],     vec![1, 10, 1],      "sigmoid".to_string(), learning_rate, false));
+
+            let mut d1 : usize = 1;
+            let mut d2 : usize = 2 * d1.clone();
+            let mut d3 : usize = 2 * d2.clone();
+            let mut d4 : usize = 2 * d3.clone();
+            let mut d5 : usize = 2 * d4.clone();
+            let mut d6 : usize = 2 * d5.clone();
 
 
+            // Im size = 48 x 48
+            nn._model.push(nnlayer::NNLayer::new("reshape".to_string(),     vec![1, 1, 48*48],     vec![1, 48, 48],     "sigmoid".to_string(), learning_rate, false));
+                        
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![ 1, 48, 48],     vec![d1, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 48, 48],     vec![d1, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![d1, 48, 48],     vec![d1, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 24, 24],     vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, 24, 24],     vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![d2, 24, 24],     vec![d2, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, 12, 12],      vec![d3, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d3, 12, 12],      vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+
+            nn._model.push(nnlayer::NNLayer::new("upsampling".to_string(),   vec![d2, 12, 12],    vec![d2, 2, 1, 0],     "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),       vec![d2, 24, 24],    vec![d3, 24, 24, 6],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d3, 24, 24],    vec![d2, 3, 1, 0],     "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, 24, 24],    vec![d1, 3, 1, 0],     "relu".to_string(), learning_rate, true));
+
+            nn._model.push(nnlayer::NNLayer::new("upsampling".to_string(),   vec![d1, 24, 24],    vec![d1, 2, 1, 0],     "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),       vec![d1, 48, 48],    vec![d2, 48, 48, 3],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, 48, 48],    vec![d1, 3, 1, 0],     "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 48, 48],    vec![d1, 3, 1, 0],     "relu".to_string(), learning_rate, true));
+
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 48, 48],     vec![1, 1, 1, 0],     "sigmoid".to_string(), learning_rate, true));
+
+
+
+
+
+/*
             // Im size = 96 x 96
-            /*
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![32, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![32, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![1, 28, 28],     vec![32, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("reshape".to_string(),     vec![1, 1, 96*96],     vec![1, 96, 96],     "sigmoid".to_string(), learning_rate, false));
+            
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![ 1, 96, 96],     vec![d1, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 96, 96],     vec![d1, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![d1, 96, 96],     vec![d1, 2, 1, 0],    "relu".to_string(), learning_rate, true));
 
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![64, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![64, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![1, 28, 28],     vec![64, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 48, 48],     vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, 48, 48],     vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![d2, 48, 48],     vec![d2, 2, 1, 0],    "relu".to_string(), learning_rate, true));
 
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![128, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![128, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![1, 28, 28],     vec![128, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2,  24, 24],    vec![d3, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d3, 24, 24],    vec![d3, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![d3, 24, 24],    vec![d3, 2, 1, 0],    "relu".to_string(), learning_rate, true));
 
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![256, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![256, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![1, 28, 28],     vec![256, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d3, 12, 12],    vec![d4, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d4, 12, 12],    vec![d4, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![d4, 12, 12],    vec![d4, 2, 1, 0],    "relu".to_string(), learning_rate, true));
 
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![512, 3, 1, 0],    "relu".to_string(), learning_rate));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![512, 3, 1, 0],    "relu".to_string(), learning_rate));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d4, 6, 6],      vec![d5, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d5, 6, 6],      vec![d5, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d5, 6, 6],      vec![d4, 3, 1, 0],    "relu".to_string(), learning_rate, true));
 
-            nn._model.push(nnlayer::NNLayer::new("conv2dup".to_string(),     vec![1, 28, 28],     vec![256, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![256, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![256, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("upsampling".to_string(),   vec![d4, 6, 6],      vec![d4, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),       vec![d4, 12, 12],    vec![d5, 12, 12, 12],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d5, 12, 12],    vec![d4, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d4, 12, 12],    vec![d3, 3, 1, 0],    "relu".to_string(), learning_rate, true));
 
-            nn._model.push(nnlayer::NNLayer::new("conv2dup".to_string(),     vec![1, 28, 28],     vec![128, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![128, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![128, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("upsampling".to_string(),   vec![d3, 12, 12],    vec![d3, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),       vec![d3, 24, 24],    vec![d4, 24, 24, 9],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d4, 24, 24],    vec![d3, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d3, 24, 24],    vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
 
-            nn._model.push(nnlayer::NNLayer::new("conv2dup".to_string(),     vec![1, 28, 28],     vec![64, 3, 1, 0],     "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![64, 3, 1, 0],     "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![64, 3, 1, 0],     "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("upsampling".to_string(),   vec![d2, 24, 24],    vec![d2, 2, 1, 0],     "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),       vec![d2, 48, 48],    vec![d3, 48, 48, 6],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d3, 48, 48],    vec![d2, 3, 1, 0],     "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, 48, 48],    vec![d1, 3, 1, 0],     "relu".to_string(), learning_rate, true));
 
-            nn._model.push(nnlayer::NNLayer::new("conv2dup".to_string(),     vec![1, 28, 28],     vec![32, 3, 1, 0],     "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 96, 96],     vec![32, 3, 1, 0],     "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![32, 3, 1, 0],     "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("upsampling".to_string(),   vec![d1, 48, 48],    vec![d1, 2, 1, 0],     "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),       vec![d1, 96, 96],    vec![d2, 96, 96, 3],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, 96, 96],    vec![d1, 3, 1, 0],     "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 96, 96],    vec![d1, 3, 1, 0],     "relu".to_string(), learning_rate, true));
 
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![1, 28, 28],     vec![1, 1, 1, 0],     "sigmoid".to_string(), learning_rate, true));
-            */
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 96, 96],     vec![1, 1, 1, 0],     "sigmoid".to_string(), learning_rate, true));
+*/
 
 
             for i in 0..nn._model.len() {
@@ -111,6 +156,10 @@ impl NN {
                 println!("  Layer {}: {} with topology {:?} - {:?}", i, nn._model[i].get_layer_type(), nn._model[i].get_input_size(), nn._model[i].get_output_size());
                 println!("--------------------------------------------------------------------------------");
             }
+
+            println!("--------------------------------------------------------------------------------");
+            println!("{} {} {} {} {} {}", d1, d2, d3, d4, d5, d6);
+            println!("--------------------------------------------------------------------------------");
         }
 
         return nn;
@@ -131,33 +180,33 @@ impl NN {
 
     // Forward propagation
     pub fn forward(&mut self, input : na::DMatrix::<f64>) -> na::DMatrix::<f64> {
-        println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-        println!("     FORWARD PROPAGATION                                           ");
-        println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+        //println!("     FORWARD PROPAGATION                                           ");
+        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
 
         let mut vals : Vec<na::DMatrix::<f64>> = vec![input.transpose().clone()];
 
-        println!("Layer 0 : ");
-        println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
+        //println!("Layer 0 : ");
+        //println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
 
         for i in 0..self._model.len() {
-            println!("Layer {} : {}", i+1, self._model[i].get_layer_type());
+            //println!("Layer {} : {}", i+1, self._model[i].get_layer_type());
             if self._model[i].get_layer_type() == "concat".to_string() {
                 let pair = self._model[i].get_concat_pair();
                 let prev_vals = self._model[pair].get_input_conv();
-                vals = self._model[i].concat_forward(vals, prev_vals);
+                vals = self._model[i].concat_forward(vals.clone(), prev_vals.clone());
             } else {
                 vals = self._model[i].forward(vals);
             }
 
-            println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
-            println!("global forward");
-            for a in 0..vals[0].nrows() {
-                for b in 0..vals[0].ncols() {
-                    print!("{:.2} ", vals[0][(a,b)]);
-                }
-                println!("");
-            }
+            //println!("        : out dims {} x {} x {}", vals.len(), vals[0].nrows(), vals[0].ncols());
+            //println!("global forward");
+            //for a in 0..vals[0].nrows() {
+            //    for b in 0..vals[0].ncols() {
+            //        print!("{:.2} ", vals[0][(a,b)]);
+            //    }
+            //    println!("");
+            //}
 
         }
 
@@ -168,33 +217,37 @@ impl NN {
 
     // Back propagation
     pub fn backward(&mut self, output : na::DMatrix::<f64>, ytrain : na::DMatrix::<f64>) {
-        println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-        println!("     BACK PROPAGATION                                              ");
-        println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+        //println!("     BACK PROPAGATION                                              ");
+        //println!(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
 
         let mut n : f64 = output.ncols() as f64;
         if output.nrows() > output.ncols() {
             n = output.nrows() as f64;
         } 
+        //let mut delta : Vec<na::DMatrix::<f64>> = vec![(2.0 / n) * (output.clone() - ytrain.clone())];
 
-        let mut delta : Vec<na::DMatrix::<f64>> = vec![(2.0 / n) * (output.clone() - ytrain.clone())];
+        let ytr = self._model[0].reshape(ytrain.clone(), (48,48));
+        let mut delta : Vec<na::DMatrix::<f64>> = vec![(2.0 / n) * (output.clone() - ytr.clone())];
         
-        println!("Layer {} : ", self._model.len());
-        println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
+        //println!("Layer {} : ", self._model.len());
+        //println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
 
         for i in (0..self._model.len()).rev() {
-            println!("Layer {} : {}", i, self._model[i].get_layer_type());
+            //println!("Layer {} : {}", i, self._model[i].get_layer_type());
             delta = self._model[i].backward(delta.clone());
 
-            println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
-            println!("global backward");
-            for a in 0..delta[0].nrows() {
-                for b in 0..delta[0].ncols() {
-                    print!("{:.2} ", delta[0][(a,b)]);
-                }
-                println!("");
-            }
+            //println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
+            //println!("global backward");
+            //for a in 0..delta[0].nrows() {
+            //    for b in 0..delta[0].ncols() {
+            //        print!("{:.2} ", delta[0][(a,b)]);
+            //    }
+            //    println!("");
+            //}
         }
+
+        println!("Dice coefficient: {:.4}", self._model[0].dice_coef(output.clone(), ytr.clone()));
     }
 
 
