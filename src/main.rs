@@ -1,5 +1,7 @@
-
 use postgres::{Client, Error, NoTls};
+
+use rand::thread_rng;
+use rand::seq::SliceRandom;
 
 extern crate nalgebra as na;
 
@@ -11,22 +13,14 @@ mod nn;
 
 
 
-type VecVec64 = Vec<Vec<Option<f64>>>;
 
-
-use rand::thread_rng;
-use rand::seq::SliceRandom;
-
-
-
-
-fn print_type_of<T>(_: &T) {
+fn _print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
 }
 
 
 
-fn query_col_string(query : &str, idx : usize, data : &mut Vec<Vec<String>>) -> Result<(), Error> {
+fn _query_col_string(query : &str, idx : usize, data : &mut Vec<Vec<String>>) -> Result<(), Error> {
     let url = "postgresql://postgres:postgres@localhost:5432/postgres";
     let mut conn = Client::connect(url, NoTls).unwrap();
 
@@ -58,7 +52,7 @@ fn query_vec(query : &str, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
 
 
 
-fn query_vec_i64_f64(query : &str, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
+fn _query_vec_i64_f64(query : &str, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
     let url = "postgresql://postgres:postgres@localhost:5432/postgres";
     let mut conn = Client::connect(url, NoTls).unwrap();
 
@@ -101,7 +95,7 @@ fn query_images(query : &str, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
 
 
 
-fn query_images_2d(query : &str, data : &mut Vec<Vec<Vec<f64>>>) -> Result<(), Error> {
+fn _query_images_2d(query : &str, data : &mut Vec<Vec<Vec<f64>>>) -> Result<(), Error> {
     let url = "postgresql://postgres:postgres@localhost:5432/postgres";
     let mut conn = Client::connect(url, NoTls).unwrap();
 
@@ -132,8 +126,7 @@ fn query_labels(query : &str, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
     let mut conn = Client::connect(url, NoTls).unwrap();
 
     for row in conn.query(query, &[])? {
-        let mut v : i32;
-        v = row.get(0);
+        let v : i32 = row.get(0);
         let mut v1 : Vec<f64> = Vec::new();
         v1.push(v as f64);
         data.push(v1);
@@ -254,7 +247,7 @@ fn split_dataset_xy_mdim(dx      : Vec<Vec<f64>>,      dy      : Vec<Vec<f64>>,
 
 
 
-fn split_dataset_xy_mdim_2d(dx      : Vec<Vec<Vec<f64>>>, dy      : Vec<Vec<Vec<f64>>>,
+fn _split_dataset_xy_mdim_2d(dx      : Vec<Vec<Vec<f64>>>, dy      : Vec<Vec<Vec<f64>>>,
                             x_train : &mut Vec<Vec<Vec<f64>>>, y_train : &mut Vec<Vec<Vec<f64>>>,
                             x_cv    : &mut Vec<Vec<Vec<f64>>>, y_cv    : &mut Vec<Vec<Vec<f64>>>,
                             x_test  : &mut Vec<Vec<Vec<f64>>>, y_test  : &mut Vec<Vec<Vec<f64>>>) {
@@ -286,7 +279,7 @@ fn split_dataset_xy_mdim_2d(dx      : Vec<Vec<Vec<f64>>>, dy      : Vec<Vec<Vec<
 
 
 
-fn logistic_regression(db : &str, class : bool) {
+fn logistic_regression(db : &str, _class : bool) {
 
     let mut query = String::new();
     query.push_str("SELECT * from ");
@@ -364,21 +357,20 @@ fn neural_network(db : &str, topology : Vec<usize>) {
     query.push_str(db);
 
     let mut data: Vec<Vec<f64>> = vec![];
-    query_vec(&query, &mut data);
+    let _qvec = query_vec(&query, &mut data);
 
 
     let _epsilon = 1.0;
     let _noise_scale = 1.0;
     let _data_norm = 1000.0;
 
-    let epochs = 5;
-    let batch = 1000;
-    let epochs_dp = 5;
-    let batch_dp = 1000;
-    let nfeat = 20;
-    let nclass = 10;
+    let _epochs = 5;
+    let _batch = 1000;
+    let _epochs_dp = 5;
+    let _batch_dp = 1000;
+    let _nfeat = 20;
+    let _nclass = 10;
 
-    
     // Shuffle input
     data.shuffle(&mut thread_rng());
 
@@ -389,14 +381,7 @@ fn neural_network(db : &str, topology : Vec<usize>) {
     let mut y_cv : Vec<f64> = vec![];
     let mut x_test : Vec<Vec<f64>> = vec![];
     let mut y_test : Vec<f64> = vec![];
-
     split_dataset(data, 20, &mut x_train, &mut y_train, &mut x_cv, &mut y_cv, &mut x_test, &mut y_test);
-
-
-    let size_li = x_train[0].len();
-    let size_l1 = 50;
-    let size_l2 = 25;
-    let size_lo = 10;
 
     let mut _topology : Vec<usize> = vec![x_train[0].len()];
     for i in topology.clone() {
@@ -404,7 +389,7 @@ fn neural_network(db : &str, topology : Vec<usize>) {
     }
     
     let mut _facts : Vec<String> = vec![];
-    for i in 0..topology.len()-1 {
+    for _ in 0..topology.len()-1 {
         _facts.push("relu".to_string());
     }
     _facts.push("softmax".to_string());
@@ -418,7 +403,7 @@ fn neural_network(db : &str, topology : Vec<usize>) {
                               learning_rate, 
                               false);
 
-    nna.enable_dp(true, 0.01, 1.0);
+    nna.enable_dp(true, _epsilon, _noise_scale, _data_norm);
 
     nna.train(x_train, y_train, x_cv, y_cv, 1, 1, 1, 1);
     nna.test(x_test, y_test);
@@ -430,36 +415,25 @@ fn neural_network(db : &str, topology : Vec<usize>) {
 
 fn neural_network_mnist(topology : Vec<usize>) {
 
-    //let mut query_x = String::from("SELECT image FROM mnist WHERE label = 0 OR label = 1");
-    //let mut query_y = String::from("SELECT label FROM mnist WHERE label = 0 OR label = 1");
-
-    let mut query_x = String::from("SELECT image FROM mnist LIMIT 10000");
-    let mut query_y = String::from("SELECT label FROM mnist LIMIT 10000");
-
+    let query_x = String::from("SELECT image FROM mnist LIMIT 10000");
+    let query_y = String::from("SELECT label FROM mnist LIMIT 10000");
 
     let mut data_x: Vec<Vec<f64>> = vec![];
-    //query_vec_i64_f64(&query_x, &mut data_x);
-    query_images(&query_x, &mut data_x);
+    let _qimg = query_images(&query_x, &mut data_x);
 
     let mut data_y: Vec<Vec<f64>> = vec![];
-    query_labels(&query_y, &mut data_y);
-
-    //println!("{}", data_x.len());
+    let _qlbl = query_labels(&query_y, &mut data_y);
 
     let _epsilon = 1.0;
     let _noise_scale = 1.0;
     let _data_norm = 1000.0;
 
-    let epochs = 5;
-    let batch = 1000;
-    let epochs_dp = 5;
-    let batch_dp = 1000;
-    let nfeat = 20;
-    let nclass = 10;
-
-    
-    // Shuffle input
-    // data.shuffle(&mut thread_rng());
+    let _epochs = 5;
+    let _batch = 1000;
+    let _epochs_dp = 5;
+    let _batch_dp = 1000;
+    let _nfeat = 20;
+    let _nclass = 10;
 
     // Split dataset into train, cross validation and test
     let mut x_train : Vec<Vec<f64>> = vec![];
@@ -468,7 +442,6 @@ fn neural_network_mnist(topology : Vec<usize>) {
     let mut y_cv : Vec<f64> = vec![];
     let mut x_test : Vec<Vec<f64>> = vec![];
     let mut y_test : Vec<f64> = vec![];
-
     split_dataset_xy(data_x, data_y, &mut x_train, &mut y_train, &mut x_cv, &mut y_cv, &mut x_test, &mut y_test);
 
 
@@ -478,13 +451,12 @@ fn neural_network_mnist(topology : Vec<usize>) {
     }
     
     let mut _facts : Vec<String> = vec![];
-    for i in 0..topology.len()-1 {
+    for _ in 0..topology.len()-1 {
         _facts.push("sigmoid".to_string());
     }
     _facts.push("softmax".to_string());
 
-
-    let learning_rate = 0.001;
+    let learning_rate = 0.005;
 
     let mut nna = nn::NN::new(vec!["conv2d".to_string()],
                               _topology,
@@ -492,46 +464,33 @@ fn neural_network_mnist(topology : Vec<usize>) {
                               learning_rate, 
                               false);
 
-    /*nna.enable_dp(true, 0.01, 1.0);*/
+    nna.enable_dp(true, _epsilon, _noise_scale, _data_norm);
 
-    //nna.train(x_train, y_train, x_cv, y_cv, 5, 1, 1, 1);
-    nna.train(x_train.clone(), y_train.clone(), x_cv.clone(), y_cv.clone(), 10, 1, 1, 1);
-    //nna.test(x_test, y_test);
+    nna.train_1(x_train.clone(), y_train.clone(), x_cv.clone(), y_cv.clone(), 10, 1, 1, 1, (28,28));
 }
 
 
 fn neural_network_nerves(topology : Vec<usize>) {
 
-    let mut query_x = String::from("SELECT imx from nerves WHERE imx IS NOT NULL AND imy IS NOT NULL LIMIT 50");
-    let mut query_y = String::from("SELECT imy from nerves WHERE imy IS NOT NULL AND imx IS NOT NULL LIMIT 50");
-
+    let query_x = String::from("SELECT imx from nerves WHERE imx IS NOT NULL AND imy IS NOT NULL LIMIT 1000");
+    let query_y = String::from("SELECT imy from nerves WHERE imy IS NOT NULL AND imx IS NOT NULL LIMIT 1000");
 
     let mut data_x: Vec<Vec<f64>> = vec![];
-    //query_vec_i64_f64(&query_x, &mut data_x);
-    query_images(&query_x, &mut data_x);
+    let _qimgs = query_images(&query_x, &mut data_x);
 
     let mut data_y: Vec<Vec<f64>> = vec![];
-    query_images(&query_y, &mut data_y);
-
-    //for i in 0..data_y[0].len() {
-    //        print!("{} ",data_y[0][i]);
-    //}
-    //println!("");
+    let _qlbl = query_images(&query_y, &mut data_y);
 
     let _epsilon = 1.0;
     let _noise_scale = 1.0;
     let _data_norm = 1000.0;
 
-    let epochs = 5;
-    let batch = 1000;
-    let epochs_dp = 5;
-    let batch_dp = 1000;
-    let nfeat = 20;
-    let nclass = 10;
-
-    
-    // Shuffle input
-    // data.shuffle(&mut thread_rng());
+    let _epochs = 5;
+    let _batch = 1000;
+    let _epochs_dp = 5;
+    let _batch_dp = 1000;
+    let _nfeat = 20;
+    let _nclass = 10;
 
     // Split dataset into train, cross validation and test
     let mut x_train : Vec<Vec<f64>> = vec![];
@@ -543,20 +502,18 @@ fn neural_network_nerves(topology : Vec<usize>) {
 
     split_dataset_xy_mdim(data_x, data_y, &mut x_train, &mut y_train, &mut x_cv, &mut y_cv, &mut x_test, &mut y_test);
 
-
     let mut _topology : Vec<usize> = vec![x_train[0].len()];
     for i in topology.clone() {
         _topology.push(i);
     }
     
     let mut _facts : Vec<String> = vec![];
-    for i in 0..topology.len()-1 {
+    for _ in 0..topology.len()-1 {
         _facts.push("sigmoid".to_string());
     }
     _facts.push("softmax".to_string());
 
-
-    let learning_rate = 0.001;
+    let learning_rate = 0.05;
 
     let mut nna = nn::NN::new(vec!["conv2d".to_string()],
                               _topology,
@@ -566,9 +523,7 @@ fn neural_network_nerves(topology : Vec<usize>) {
 
     /*nna.enable_dp(true, 0.01, 1.0);*/
 
-    //nna.train(x_train, y_train, x_cv, y_cv, 5, 1, 1, 1);
     nna.train_mdim_1(x_train.clone(), y_train.clone(), x_train.clone(), y_train.clone(), 5, 1, 1, 1, (96, 96));
-    //nna.test(x_test, y_test);
 }
 
 
@@ -579,7 +534,7 @@ fn neural_network_nerves(topology : Vec<usize>) {
 
 fn main() -> Result<(), Error> {
 
-    let opt : usize = 6;
+    let opt : usize = 5;
 
     if opt == 1{    /*Done*/
 

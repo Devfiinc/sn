@@ -756,6 +756,7 @@ impl NNLayer {
 
 
         // If full conv2d forward, output_size = input_size
+        /*
         if self._full {
             let mut add_size = (self._kern - 1) / 2;
             //let mut add_size = input[0].shape().0 - self._out_size.0;
@@ -779,6 +780,7 @@ impl NNLayer {
                 }
             }
         }
+        */
 
         self._qvaluesu_conv = Vec::new();
         for _ in 0..self._kernels.len() {
@@ -899,6 +901,22 @@ impl NNLayer {
 
         let mut out_size = self.conv2d_output_size(in1.shape());
 
+
+        if full {
+            let mut add_size = self._kern - 1;
+            out_size = self.conv2d_output_size((in1.shape().0 + 2*add_size, in1.shape().1 + 2*add_size));
+
+            if add_size > 0 {
+                in1 = in1.clone().insert_rows(0, add_size, 0.0);
+                in1 = in1.clone().insert_columns(0, add_size, 0.0);
+                in1 = in1.clone().insert_rows(in1.nrows(), add_size, 0.0);
+                in1 = in1.clone().insert_columns(in1.ncols(), add_size, 0.0);
+            }            
+        }
+
+
+
+        /*
         if full {
             let mut add_size = self._kern - 1;
             if self._full {
@@ -922,6 +940,7 @@ impl NNLayer {
             }
             
         }
+        */
 
         let mut out = na::DMatrix::<f64>::from_element(out_size.0, out_size.1, 0.);
 
@@ -1406,7 +1425,67 @@ impl NNLayer {
     // Metric for medical data - Dice loss
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
+
+
+    pub fn dice(&self, y_true: na::DMatrix<f64>, y_pred: na::DMatrix<f64>) -> f64 {
+        let mut inter : f64 = 0.0;
+        let mut ytrue : f64 = y_true.nrows() as f64 * y_true.ncols() as f64;
+        let mut ypred : f64 = y_pred.nrows() as f64 * y_pred.ncols() as f64;
+
+        let inter_mat = y_true.clone() * y_pred.clone();
+
+        for i in 0..inter_mat.nrows() {
+            for j in 0..inter_mat.ncols() {
+                if y_true[(i,j)] > 0.5 && y_pred[(i,j)] > 0.5 {
+                    inter += 1.0;
+                }
+            }
+        }
+
+        if ytrue == 0.0 || ypred == 0.0 {
+            return 1.0;
+        } else {
+            return 100.0 * (2.0 * inter) / (ytrue + ypred);
+        }
+    }
+    
+
+/*
+
+
+    pub fn dice_coefficient(&self, y_true: na::DMatrix<f64>, y_pred: na::DMatrix<f64>) -> f64 {
+        let mut intersection = 0.0;
+        let mut union = 0.0;
+
+        for i in 0..y_true.nrows() {
+            for j in 0..y_true.ncols() {
+                if y_true[(i,j)] == 1.0 {
+                    union += 1.0;
+                    if y_pred[(i,j)] == 1.0 {
+                        intersection += 1.0;
+                    }
+                }
+            }
+        }
+
+        return intersection / union;
+    }
+*/
+
+
+
+
+
     pub fn dice_coef(&mut self, y_true : na::DMatrix<f64>, y_pred : na::DMatrix<f64>) -> f64 {
+
+
+
+
+
+
+
+
         let mut y_true_f = self.flatten(y_true, false);
         let mut y_pred_f = self.flatten(y_pred, false);
         /*
