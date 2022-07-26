@@ -247,7 +247,7 @@ impl NN {
             //}
         }
 
-        println!("Dice coefficient: {:.4}", self._model[0].dice_coef(output.clone(), ytr.clone()));
+        println!("Dice coefficient: {:.4}", self._model[0].dice_coef(ytr.clone(), output.clone()));
     }
 
 

@@ -447,8 +447,8 @@ fn neural_network_mnist(topology : Vec<usize>) {
 
 fn neural_network_nerves(topology : Vec<usize>) {
 
-    let mut query_x = String::from("SELECT imx from nerves WHERE imx IS NOT NULL AND imy IS NOT NULL LIMIT 5000");
-    let mut query_y = String::from("SELECT imy from nerves WHERE imy IS NOT NULL AND imx IS NOT NULL LIMIT 5000");
+    let mut query_x = String::from("SELECT imx from nerves WHERE imx IS NOT NULL AND imy IS NOT NULL LIMIT 50");
+    let mut query_y = String::from("SELECT imy from nerves WHERE imy IS NOT NULL AND imx IS NOT NULL LIMIT 50");
 
 
     let mut data_x: Vec<Vec<f64>> = vec![];
@@ -458,6 +458,10 @@ fn neural_network_nerves(topology : Vec<usize>) {
     let mut data_y: Vec<Vec<f64>> = vec![];
     query_images(&query_y, &mut data_y);
 
+    for i in 0..data_y[0].len() {
+        print!("{} ",data_y[0][i]);
+    }
+    println!("");
 
     let _epsilon = 1.0;
     let _noise_scale = 1.0;

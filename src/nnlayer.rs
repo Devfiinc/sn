@@ -1468,8 +1468,41 @@ impl NNLayer {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     pub fn dice_coef(&mut self, y_true : na::DMatrix<f64>, y_pred : na::DMatrix<f64>) -> f64 {
-        let y_true_f = self.flatten(y_true, false);
-        let y_pred_f = self.flatten(y_pred, false);
+        let mut y_true_f = self.flatten(y_true, false);
+        let mut y_pred_f = self.flatten(y_pred, false);
+        /*
+        println!("y_true_f");
+        for i in 0..y_true_f.nrows() {
+            for j in 0..y_true_f.ncols() {
+                if y_true_f[(i,j)] >= 0.5 {
+                    y_true_f[(i,j)] = 1.0;
+                } else {
+                    y_true_f[(i,j)] = 0.0;
+                }
+                if y_pred_f[(i,j)] >= 0.5 {
+                    y_pred_f[(i,j)] = 1.0;
+                } else {
+                    y_pred_f[(i,j)] = 0.0;
+                }
+                print!("{} ", y_true_f[(i,j)]);
+            }
+            println!("");
+        }
+
+        println!("");
+
+        println!("y_pred_f");
+        for i in 0..y_pred_f.nrows() {
+            for j in 0..y_pred_f.ncols() {
+                print!("{} ", y_pred_f[(i,j)]);
+            }
+            println!("");
+        }
+
+        println!("");
+        println!("");
+        println!("");
+        */
         
         let mut intersection : f64 = 0.0;
         let mut sum_y_true_f = 0.0;
