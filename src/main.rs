@@ -101,6 +101,32 @@ fn query_images(query : &str, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
 
 
 
+fn query_images_2d(query : &str, data : &mut Vec<Vec<Vec<f64>>>) -> Result<(), Error> {
+    let url = "postgresql://postgres:postgres@localhost:5432/postgres";
+    let mut conn = Client::connect(url, NoTls).unwrap();
+
+    for row in conn.query(query, &[])? {
+        let mut v : Vec<Vec<i32>> = Vec::new();
+        v = row.get(0);
+        // for i in 0..row.len() {
+        //     v.push(row.get(i));
+        // }
+        let mut v0 : Vec<Vec<f64>> = Vec::new();
+        for i in 0..v.len(){
+            let mut v1 : Vec<f64> = Vec::new();
+            for j in 0..v[i].len(){
+                v1.push(v[i][j] as f64 / 255.0);
+            }
+            v0.push(v1);
+        }
+        data.push(v0);
+    }
+    Ok(())
+}
+
+
+
+
 fn query_labels(query : &str, data : &mut Vec<Vec<f64>>) -> Result<(), Error> {
     let url = "postgresql://postgres:postgres@localhost:5432/postgres";
     let mut conn = Client::connect(url, NoTls).unwrap();
@@ -203,6 +229,35 @@ fn split_dataset_xy_mdim(dx      : Vec<Vec<f64>>,      dy      : Vec<Vec<f64>>,
                          x_train : &mut Vec<Vec<f64>>, y_train : &mut Vec<Vec<f64>>,
                          x_cv    : &mut Vec<Vec<f64>>, y_cv    : &mut Vec<Vec<f64>>,
                          x_test  : &mut Vec<Vec<f64>>, y_test  : &mut Vec<Vec<f64>>) {
+
+    let mut _size_train = 0.70;
+    let mut _size_cv = 0.15;
+    let mut _size_test = 0.15;
+                    
+    let mut i : i64 = 0;
+    let split_train : i64 = (dx.len() as f64 * _size_train) as i64;
+    let split_cv : i64 = (dx.len() as f64 * (_size_train + _size_cv)) as i64;
+    for n in 0..dx.len() {
+        if i < split_train {
+            x_train.push(dx[n].clone());
+            y_train.push(dy[n].clone());
+        } else if i < split_cv {
+            x_cv.push(dx[n].clone());
+            y_cv.push(dy[n].clone());
+        } else {
+            x_test.push(dx[n].clone());
+            y_test.push(dy[n].clone());
+        }
+        i = i + 1;
+    }
+}
+
+
+
+fn split_dataset_xy_mdim_2d(dx      : Vec<Vec<Vec<f64>>>, dy      : Vec<Vec<Vec<f64>>>,
+                            x_train : &mut Vec<Vec<Vec<f64>>>, y_train : &mut Vec<Vec<Vec<f64>>>,
+                            x_cv    : &mut Vec<Vec<Vec<f64>>>, y_cv    : &mut Vec<Vec<Vec<f64>>>,
+                            x_test  : &mut Vec<Vec<Vec<f64>>>, y_test  : &mut Vec<Vec<Vec<f64>>>) {
 
     let mut _size_train = 0.70;
     let mut _size_cv = 0.15;
@@ -458,10 +513,10 @@ fn neural_network_nerves(topology : Vec<usize>) {
     let mut data_y: Vec<Vec<f64>> = vec![];
     query_images(&query_y, &mut data_y);
 
-    for i in 0..data_y[0].len() {
-        print!("{} ",data_y[0][i]);
-    }
-    println!("");
+    //for i in 0..data_y[0].len() {
+    //        print!("{} ",data_y[0][i]);
+    //}
+    //println!("");
 
     let _epsilon = 1.0;
     let _noise_scale = 1.0;
@@ -512,7 +567,7 @@ fn neural_network_nerves(topology : Vec<usize>) {
     /*nna.enable_dp(true, 0.01, 1.0);*/
 
     //nna.train(x_train, y_train, x_cv, y_cv, 5, 1, 1, 1);
-    nna.train_mdim(x_train.clone(), y_train.clone(), x_train.clone(), y_train.clone(), 5, 1, 1, 1);
+    nna.train_mdim_1(x_train.clone(), y_train.clone(), x_train.clone(), y_train.clone(), 5, 1, 1, 1, (96, 96));
     //nna.test(x_test, y_test);
 }
 

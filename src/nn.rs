@@ -12,6 +12,7 @@ pub struct NN {
     _learning_rate : f64,
     _model : Vec<nnlayer::NNLayer>,
     _concatenations : Vec<usize>,
+    _dims : (usize, usize),
 
     // Differential privacy
     _dp : bool,
@@ -31,6 +32,7 @@ impl NN {
             _learning_rate : learning_rate,
             _model : vec![],
             _concatenations : vec![],
+            _dims : (0, 0),
 
             _dp : false,
             _noise_scale : 0.0,
@@ -72,32 +74,33 @@ impl NN {
             let mut d5 : usize = 2 * d4.clone();
             let mut d6 : usize = 2 * d5.clone();
 
+            let mut s1 : usize = 96;        //96
+            let mut s2 : usize = s1 / 2;    //48
+            let mut s3 : usize = s2 / 2;    //24
+            let mut s4 : usize = s3 / 2;    //12
+            let mut s5 : usize = s4 / 2;    //6
+            let mut s6 : usize = s5 / 2;    //
+
 
             // Im size = 48 x 48
-            nn._model.push(nnlayer::NNLayer::new("reshape".to_string(),     vec![1, 1, 48*48],     vec![1, 48, 48],     "sigmoid".to_string(), learning_rate, false));
-                        
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![ 1, 48, 48],     vec![d1, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 48, 48],     vec![d1, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![d1, 48, 48],     vec![d1, 2, 1, 0],    "relu".to_string(), learning_rate, true));
-
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 24, 24],     vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, 24, 24],     vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![d2, 24, 24],     vec![d2, 2, 1, 0],    "relu".to_string(), learning_rate, true));
-
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, 12, 12],      vec![d3, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d3, 12, 12],      vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
-
-            nn._model.push(nnlayer::NNLayer::new("upsampling".to_string(),   vec![d2, 12, 12],    vec![d2, 2, 1, 0],     "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),       vec![d2, 24, 24],    vec![d3, 24, 24, 6],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d3, 24, 24],    vec![d2, 3, 1, 0],     "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, 24, 24],    vec![d1, 3, 1, 0],     "relu".to_string(), learning_rate, true));
-
-            nn._model.push(nnlayer::NNLayer::new("upsampling".to_string(),   vec![d1, 24, 24],    vec![d1, 2, 1, 0],     "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),       vec![d1, 48, 48],    vec![d2, 48, 48, 3],    "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, 48, 48],    vec![d1, 3, 1, 0],     "relu".to_string(), learning_rate, true));
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 48, 48],    vec![d1, 3, 1, 0],     "relu".to_string(), learning_rate, true));
-
-            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, 48, 48],     vec![1, 1, 1, 0],     "sigmoid".to_string(), learning_rate, true));
+                       
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![ 1, s1, s1],     vec![d1, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, s1, s1],     vec![d1, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![d1, s1, s1],     vec![d1, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, s2, s2],     vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, s2, s2],     vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("max_pooling".to_string(),  vec![d2, s2, s2],     vec![d2, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, s3, s3],     vec![d3, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d3, s3, s3],     vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("upsampling".to_string(),   vec![d2, s3, s3],     vec![d2, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),       vec![d2, s2, s2],     vec![d3, s2, s2, 5],  "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d3, s2, s2],     vec![d2, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, s2, s2],     vec![d1, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("upsampling".to_string(),   vec![d1, s2, s2],     vec![d1, 2, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("concat".to_string(),       vec![d1, s1, s1],     vec![d2, s1, s1, 2],  "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d2, s1, s1],     vec![d1, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, s1, s1],     vec![d1, 3, 1, 0],    "relu".to_string(), learning_rate, true));
+            nn._model.push(nnlayer::NNLayer::new("conv2d".to_string(),       vec![d1, s1, s1],     vec![1, 1, 1, 0],     "sigmoid".to_string(), learning_rate, true));
 
 
 
@@ -225,17 +228,23 @@ impl NN {
         if output.nrows() > output.ncols() {
             n = output.nrows() as f64;
         } 
-        //let mut delta : Vec<na::DMatrix::<f64>> = vec![(2.0 / n) * (output.clone() - ytrain.clone())];
 
-        let ytr = self._model[0].reshape(ytrain.clone(), (48,48));
-        let mut delta : Vec<na::DMatrix::<f64>> = vec![(2.0 / n) * (output.clone() - ytr.clone())];
+
+
+        let mut delta : Vec<na::DMatrix::<f64>> = vec![(2.0 / n) * (output.clone() - ytrain.clone())];
+        //let mut delta : Vec<na::DMatrix::<f64>> = vec![na::DMatrix::from_element(self._dims.1, self._dims.0, 0.)];
+        //for i in 0..delta[0].nrows() {
+        //    for j in 0..delta[0].ncols() {
+        //        delta[0][(i,j)] = (2.0 / n) * (output[(i,j)] - ytrain[(i,j)]);
+        //    }
+        //}
         
         //println!("Layer {} : ", self._model.len());
         //println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
 
         for i in (0..self._model.len()).rev() {
             //println!("Layer {} : {}", i, self._model[i].get_layer_type());
-            delta = self._model[i].backward(delta.clone());
+            delta = self._model[i].backward(delta);
 
             //println!("        : out dims {} x {} x {}", delta.len(), delta[0].nrows(), delta[0].ncols());
             //println!("global backward");
@@ -247,7 +256,7 @@ impl NN {
             //}
         }
 
-        println!("Dice coefficient: {:.4}", self._model[0].dice_coef(ytr.clone(), output.clone()));
+        println!("Dice coefficient: {:.4}", self._model[0].dice_coef(ytrain.clone(), output.clone()));
     }
 
 
@@ -380,6 +389,75 @@ impl NN {
                 //let mut y = na::DMatrix::from_element(1, self._topology[self._topology.len() - 1], 0.);
                 //let mut y = na::DMatrix::from_element(1, self._model[self._model.len() - 1].get_output_size()[1], 0.);
                 let mut y = na::DMatrix::<f64>::from_vec(self._topology[0], 1, y_train[i].clone());
+                //y[(0, y_train[i].clone() as usize)] = 1.0;
+        
+                self.backward(lo.clone(), y.clone());
+            }
+
+            println!(" - ");
+            println!(" - Validation = {:.2} %", self.compute_accuracy_mdim(x_val.clone(), y_val.clone()));
+            println!(" - - - - - - - - - - - - - - - - - - - - ");
+            
+        }
+    }
+
+
+    // Train
+    pub fn train_mdim_1(&mut self, x_train : Vec<Vec<f64>>, y_train : Vec<Vec<f64>>,
+                                   x_val : Vec<Vec<f64>>,   y_val : Vec<Vec<f64>>, 
+                                   _num_episodes : i64, _max_steps : i64, _target_upd : i64, _exp_upd : i64,
+                                   dims : (usize, usize)) {
+
+        self._dims = dims;
+
+        for i in 0.._num_episodes {
+            for i in 0..x_train.len() {
+                if (i % 100) == 0 {
+                    println!("Training = {:.2} %", 100.0 * i as f64 / x_train.len() as f64);
+                }
+                //println!("{:?} of {:?}", i+1, x_train.len());
+        
+                //println!("Forward");
+                let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(dims.0, dims.1, x_train[i].clone());
+                let lo : na::DMatrix::<f64> = self.forward(li.clone());
+        
+                //println!("Backward");
+                //let mut y = na::DMatrix::from_element(1, self._topology[self._topology.len() - 1], 0.);
+                //let mut y = na::DMatrix::from_element(1, self._model[self._model.len() - 1].get_output_size()[1], 0.);
+                let mut y = na::DMatrix::<f64>::from_vec(dims.0, dims.1, y_train[i].clone());
+                //y[(0, y_train[i].clone() as usize)] = 1.0;
+        
+                self.backward(lo.clone(), y.clone());
+            }
+
+            println!(" - ");
+            println!(" - Validation = {:.2} %", self.compute_accuracy_mdim(x_val.clone(), y_val.clone()));
+            println!(" - - - - - - - - - - - - - - - - - - - - ");
+            
+        }
+    }
+
+
+    // Train 2D inputs
+    pub fn train_mdim_2d(&mut self, x_train : Vec<Vec<Vec<f64>>>, y_train : Vec<Vec<Vec<f64>>>,
+                            x_val : Vec<Vec<f64>>,   y_val : Vec<Vec<f64>>, 
+                            _num_episodes : i64, _max_steps : i64, _target_upd : i64, _exp_upd : i64) {
+
+        for i in 0.._num_episodes {
+            for i in 0..x_train.len() {
+                if (i % 100) == 0 {
+                    println!("Training = {:.2} %", 100.0 * i as f64 / x_train.len() as f64);
+                }
+                //println!("{:?} of {:?}", i+1, x_train.len());
+        
+                //println!("Forward");
+                let li : na::DMatrix::<f64> = na::DMatrix::<f64>::from_vec(self._topology[0], 1, x_train[i][0].clone());
+                let lo : na::DMatrix::<f64> = self.forward(li.clone());
+        
+                //println!("Backward");
+                //let mut y = na::DMatrix::from_element(1, self._topology[self._topology.len() - 1], 0.);
+                //let mut y = na::DMatrix::from_element(1, self._model[self._model.len() - 1].get_output_size()[1], 0.);
+                let mut y = na::DMatrix::<f64>::from_vec(self._topology[0], 1, y_train[i][0].clone());
                 //y[(0, y_train[i].clone() as usize)] = 1.0;
         
                 self.backward(lo.clone(), y.clone());

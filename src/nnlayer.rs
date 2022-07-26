@@ -8,12 +8,10 @@ pub struct NNLayer {
     // Layer definition
     _layer_type : String,
 
-    _input_size : Vec<usize>,
     _input_size_depth : usize,
     _input_size_i : usize,
     _input_size_j : usize,
 
-    _output_size : Vec<usize>,
     _output_size_depth : usize,
     _output_size_i : usize,
     _output_size_j : usize,
@@ -85,12 +83,10 @@ impl NNLayer {
             // Layer definition: Dense || Conv2d || MaxPooling || Dropout.
             _layer_type : layer_type.clone(),
 
-            _input_size : input_size.clone(),
             _input_size_depth : input_size[0],
             _input_size_i : input_size[1],
             _input_size_j : input_size[2],
 
-            _output_size : output_size.clone(),
             _output_size_depth : output_size[0],
             _output_size_i : output_size[1],
             _output_size_j : output_size[2],
@@ -170,7 +166,7 @@ impl NNLayer {
             for i in 0..nnlayer._num_kernels {
                 nnlayer._kernels.push(Vec::new());
                 for j in 0..nnlayer._input_size_depth {
-                    nnlayer._kernels[i].push(na::DMatrix::from_fn(nnlayer._input_size[1] + 1, nnlayer._input_size[1] + 1, |_r,_c| {rand::random::<f64>() - 0.5}));
+                    nnlayer._kernels[i].push(na::DMatrix::from_fn(nnlayer._input_size_i + 1, nnlayer._input_size_i + 1, |_r,_c| {rand::random::<f64>() - 0.5}));
                 }
             }
         }
@@ -185,7 +181,7 @@ impl NNLayer {
             for i in 0..nnlayer._num_kernels {
                 nnlayer._kernels.push(Vec::new());
                 for j in 0..nnlayer._input_size_depth {
-                    nnlayer._kernels[i].push(na::DMatrix::from_fn(nnlayer._input_size[1] + 1, nnlayer._input_size[1] + 1, |_r,_c| {rand::random::<f64>() - 0.5}));
+                    nnlayer._kernels[i].push(na::DMatrix::from_fn(nnlayer._input_size_i + 1, nnlayer._input_size_i + 1, |_r,_c| {rand::random::<f64>() - 0.5}));
                 }
             }
         }
@@ -217,11 +213,11 @@ impl NNLayer {
     }
 
     pub fn get_input_size(&self) -> Vec<usize> {
-        return self._input_size.clone();
+        return vec![self._input_size_depth, self._input_size_i, self._input_size_j];
     }
 
     pub fn get_output_size(&self) -> Vec<usize> {
-        return self._output_size.clone();
+        return vec![self._output_size_depth, self._output_size_i, self._output_size_j];
     }
 
     pub fn get_concat_pair(&self) -> usize {
@@ -246,7 +242,7 @@ impl NNLayer {
 
 
     pub fn set_concat_qvalues(&mut self, qvalues : Vec<na::DMatrix<f64>>) {
-        self._qvalues_concat = qvalues.clone();
+        self._qvalues_concat = qvalues;
     }
 
 
@@ -371,16 +367,12 @@ impl NNLayer {
 
 
     pub fn reshape(&mut self, input : na::DMatrix::<f64>, shape : (usize, usize)) -> na::DMatrix::<f64> {
-       
-        let input_size_i        = input.shape().0;
-        let input_size_j        = input.shape().1;
-
         let output_size_i       = shape.0;
         let output_size_j       = shape.1;
 
         let mut out = na::DMatrix::from_element(output_size_i, output_size_j, 0.);
         
-        for im in 0..input.len() {
+        for _ in 0..input.len() {
             let mut oi : usize = 0;
             let mut oj : usize = 0;
             for a in 0..input.nrows() {
@@ -403,9 +395,6 @@ impl NNLayer {
         let mut output : Vec<na::DMatrix::<f64>> = Vec::new();
         
         let input_size_depth    = self._input_size_depth;
-        let input_size_i        = self._input_size_i;
-        let input_size_j        = self._input_size_j;
-
         let output_size_depth   = self._output_size_depth;
         let output_size_i       = self._output_size_i;
         let output_size_j       = self._output_size_j;
@@ -781,7 +770,8 @@ impl NNLayer {
             }
 
             add_size = input[0].shape().0 - self._out_size.0;
-            if add_size > 0 {
+            //if add_size > 0 {
+            if add_size % 2 == 1 {
                 self._out_size = (self._out_size.0 + add_size, self._out_size.1 + add_size);
                 for i in 0..input.len() {
                     self._input_conv[i] = self._input_conv[i].clone().insert_rows(self._input_conv[i].nrows(), add_size, 0.0);
@@ -789,31 +779,9 @@ impl NNLayer {
                 }
             }
         }
-        
-
-        //println!("Full {}", self._full);
-        //if self._full {
-        //    let add_size = (self._kern - 1) / 2;
-        //    println!("Out size {} {}", self._out_size.0, self._out_size.1);
-        //    self._out_size = self.conv2d_output_size((input[0].shape().0 + 2*add_size, input[0].shape().1 + 2*add_size));
-        //    println!("Out size {} {}", self._out_size.0, self._out_size.1);
-//
-        //    for i in 0..input.len() {
-        //        if add_size > 0 {
-        //            self._input_conv[i] = self._input_conv[i].clone().insert_rows(0, add_size, 0.0);
-        //            self._input_conv[i] = self._input_conv[i].clone().insert_columns(0, add_size, 0.0);
-        //            self._input_conv[i] = self._input_conv[i].clone().insert_rows(self._input_conv[i].nrows(), add_size, 0.0);
-        //            self._input_conv[i] = self._input_conv[i].clone().insert_columns(self._input_conv[i].ncols(), add_size, 0.0);
-        //        }
-        //    }
-        //}
-
-
-
-
 
         self._qvaluesu_conv = Vec::new();
-        for i in 0..self._kernels.len() {
+        for _ in 0..self._kernels.len() {
             self._qvaluesu_conv.push(na::DMatrix::from_element(self._out_size.0, self._out_size.1, 0.));
         }
 
@@ -1073,33 +1041,6 @@ impl NNLayer {
             }
         }
 
-
-
-        /*
-        for i in (0..(self._input_size_i - self._kern + 1)).step_by(self._stride) {
-            for j in (0..(self._input_size_j - self._kern + 1)).step_by(self._stride) {
-
-                let mut max : Vec<f64> = Vec::new();
-                for maxi in 0..self._input_size_depth {
-                    max.push(0.);
-                }
-
-                for ki in 0..self._kern {
-                    for kj in 0..self._kern {
-                        for inp in 0..self._input_size_depth {
-                            if self._input_conv[inp][(i + ki, j + kj)] > max[inp] {
-                                max[inp] = self._input_conv[inp][(i + ki, j + kj)];
-                            }
-                        }
-                    }
-                }
-
-                for inp in 0..self._input_size_depth {
-                    self._qvaluesu_conv[inp][(i/self._stride,j/self._stride)] = max[inp];
-                }
-            }
-        }
-        */
         return self._qvaluesu_conv.clone();
     }
 
@@ -1148,7 +1089,7 @@ impl NNLayer {
                 let mut maxi : Vec<usize> = Vec::new();
                 let mut maxj : Vec<usize> = Vec::new();
                 let mut max : Vec<f64> = Vec::new();
-                for h in 0..self._input_size_depth {
+                for _ in 0..self._input_size_depth {
                     maxi.push(0);
                     maxj.push(0);
                     max.push(0.);
@@ -1162,11 +1103,11 @@ impl NNLayer {
 
                     let new = gradient_from_above[inp][(i/self._kern,j/self._kern)];
 
-                    let dA = new * mask.clone();
+                    let d_a = new * mask;
 
                     for ki in 0..self._kern {
                         for kj in 0..self._kern {
-                            grad_input[inp][(i + ki, j + kj)] += dA[(ki,kj)];
+                            grad_input[inp][(i + ki, j + kj)] += d_a[(ki,kj)];
                         }
                     }
                 }
@@ -1194,21 +1135,23 @@ impl NNLayer {
 
         self._qvalues = self._input.clone() * self._weights.clone();
         self._qvaluesu = self._qvalues.clone();
+ 
+        self._qvaluesu = self._input.clone() * self._weights.clone();
     
         if self._f_act == String::from("relu") {
-            self._qvalues = self._qvalues.map(|x| fact::relu(x));
+            self._qvalues = self._qvaluesu.map(|x| fact::relu(x));
         }
         else if self._f_act == String::from("sigmoid") {
-            self._qvalues = self._qvalues.map(|x| fact::sigmoid(x));
+            self._qvalues = self._qvaluesu.map(|x| fact::sigmoid(x));
         }
         else if self._f_act == String::from("tanh") {
-            self._qvalues = self._qvalues.map(|x| fact::tanh(x));
+            self._qvalues = self._qvaluesu.map(|x| fact::tanh(x));
         }
         else if self._f_act == String::from("softmax") {
-            self._qvalues = fact::softmax(self._qvalues.clone());
+            self._qvalues = fact::softmax(self._qvaluesu.clone());
         }
         else {
-            self._qvalues = self._qvalues.map(|x| fact::linear(x));
+            self._qvalues = self._qvaluesu.map(|x| fact::linear(x));
         }
         
         return vec![self._qvalues.clone()];
@@ -1413,10 +1356,6 @@ impl NNLayer {
 
 
     pub fn update_weights_adam(&mut self, gradient : na::DMatrix::<f64>) {
-        //let mut m_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
-        //let mut v_temp = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
-        //let mut m_vec_hat = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
-        //let mut v_vec_hat = na::DMatrix::from_element(self._input_size, self._output_size, 0.);
 
         let mut m_temp = self._m.clone();
         let mut v_temp = self._v.clone();
@@ -1430,7 +1369,7 @@ impl NNLayer {
 
         m_temp = self._beta_1 * m_temp + (1.0 - self._beta_1) * gradient1.clone();
 
-        let mut gradient2 = na::DMatrix::from_element(self._input_size[1], self._output_size[2], 0.);
+        let mut gradient2 = na::DMatrix::from_element(self._input_size_i, self._output_size_j, 0.);
         for i in 0..gradient1.nrows() {
             for j in 0..gradient1.ncols() {
                 gradient2[(i,j)] = gradient1[(i,j)] * gradient1[(i,j)];
@@ -1443,7 +1382,7 @@ impl NNLayer {
         let m_vec_hat = &m_temp / (1.0 - self._beta_1.powf(self._time + 0.1));
         let v_vec_hat = &v_temp / (1.0 - self._beta_2.powf(self._time + 0.1));
 
-        let mut weights_temp = na::DMatrix::from_element(self._input_size[1], self._output_size[1], 0.);
+        let mut weights_temp = na::DMatrix::from_element(self._input_size_i, self._output_size_i, 0.);
         
         for i in 0..self._weights.nrows() {
             for j in 0..self._weights.ncols() {
